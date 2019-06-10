@@ -4,7 +4,7 @@ Major design experience (MDE) project, sponsored by HJ Drive.
 
 ## Project Specification
 
-See [spec document](logistics/specs_ver0_0.pptx). Subject to changes.
+See [spec document](logistics/specs_ver0_0.pdf). Subject to changes.
 
 ## Project Timeline
 
