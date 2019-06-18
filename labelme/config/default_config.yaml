@@ -7,7 +7,20 @@ logger_level: info
 
 flags: null
 label_flags: null
-labels: null
+labels: [
+  bike,
+  bus,
+  car,
+  motor,
+  train,
+  truck,
+  rider,
+  person,
+  traffic light,
+  traffic sign,
+  driveway(可行驶区域),
+  lane
+]
 file_search: null
 sort_labels: true
 validate_label: null
