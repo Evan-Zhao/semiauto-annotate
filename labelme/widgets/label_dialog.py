@@ -29,7 +29,8 @@ class LabelQLineEdit(QtWidgets.QLineEdit):
 
 class LabelDialog(QtWidgets.QDialog):
 
-    def __init__(self, text="Enter object label", parent=None, labels=None,
+    def __init__(self, text="Enter object label", parent=None,
+                 labels=None, sublabels=None,
                  sort_labels=True, show_text_field=True,
                  completion='startswith', fit_to_content=None, flags=None):
         if fit_to_content is None:
@@ -43,9 +44,9 @@ class LabelDialog(QtWidgets.QDialog):
         self.edit.editingFinished.connect(self.postProcess)
         if flags:
             self.edit.textChanged.connect(self.updateFlags)
-        layout = QtWidgets.QVBoxLayout()
+        layout = QtWidgets.QGridLayout()
         if show_text_field:
-            layout.addWidget(self.edit)
+            layout.addWidget(self.edit, 0, 0)
         # buttons
         self.buttonBox = bb = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel,
@@ -56,7 +57,7 @@ class LabelDialog(QtWidgets.QDialog):
         bb.button(bb.Cancel).setIcon(labelme.utils.newIcon('undo'))
         bb.accepted.connect(self.validate)
         bb.rejected.connect(self.reject)
-        layout.addWidget(bb)
+        layout.addWidget(bb, 1, 0)
         # label_list
         self.labelList = QtWidgets.QListWidget()
         if self._fit_to_content['row']:
@@ -77,14 +78,20 @@ class LabelDialog(QtWidgets.QDialog):
                 QtWidgets.QAbstractItemView.InternalMove)
         self.labelList.currentItemChanged.connect(self.labelSelected)
         self.edit.setListWidget(self.labelList)
-        layout.addWidget(self.labelList)
+        layout.addWidget(self.labelList, 2, 0)
+        # sublabel
+        if sublabels is None:
+            sublabels = {}
+        self._sublabels = sublabels
+        self.sublabelsLayout = QtWidgets.QVBoxLayout()
+        layout.addItem(self.sublabelsLayout, 0, 1, 4, 1)
         # label_flags
         if flags is None:
             flags = {}
         self._flags = flags
         self.flagsLayout = QtWidgets.QVBoxLayout()
         self.resetFlags()
-        layout.addItem(self.flagsLayout)
+        layout.addItem(self.flagsLayout, 3, 0)
         self.edit.textChanged.connect(self.updateFlags)
         self.setLayout(layout)
         # completion
