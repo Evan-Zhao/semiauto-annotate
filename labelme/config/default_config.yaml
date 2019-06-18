@@ -6,7 +6,32 @@ keep_prev: false
 logger_level: info
 
 flags: null
-label_flags: null
+label_flags: 
+  .*: [occluded, truncated]
+  # traffic sign: [
+  #   speed limit,
+  #   end speed limit,
+  #   stop,
+  #   no entry,
+  #   right turn,
+  #   left turn,
+  #   keep straight,
+  #   keep left,
+  #   keep right,
+  #   traffic cone,
+  #   other signs
+  # ]
+  # traffic light: [
+  #   red,
+  #   yellow,
+  #   blue,
+  #   unknown
+  # ]
+  # driveway.*: [
+  #   current,
+  #   alternative
+  # ]
+
 labels: [
   bike,
   bus,
