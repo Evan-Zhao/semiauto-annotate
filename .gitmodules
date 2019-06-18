@@ -1,0 +1,3 @@
+[submodule "labelme"]
+	path = labelme
+	url = git@github.com:wkentaro/labelme.git
