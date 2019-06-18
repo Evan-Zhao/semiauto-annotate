@@ -1,3 +1,8 @@
 # IDE
 .vscode/
 .idea
+
+# Build output
+build/
+dist/
+*.egginfo/
