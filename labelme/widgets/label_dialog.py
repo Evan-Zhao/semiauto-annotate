@@ -279,4 +279,4 @@ class LabelDialog(QtWidgets.QDialog):
         if self.exec_():
             return self.collectCurrentState()
         else:
-            return None
+            return None, None, None

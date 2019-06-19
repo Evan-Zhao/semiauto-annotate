@@ -5,15 +5,12 @@ import re
 import webbrowser
 
 from qtpy import QtCore
-from qtpy.QtCore import Qt
 from qtpy import QtGui
 from qtpy import QtWidgets
+from qtpy.QtCore import Qt
 
-from labelme import __appname__
-from labelme import PY2
 from labelme import QT5
-
-from . import utils
+from labelme import __appname__
 from labelme.config import get_config
 from labelme.label_file import LabelFile
 from labelme.label_file import LabelFileError
@@ -28,6 +25,7 @@ from labelme.widgets import LabelDialog
 from labelme.widgets import LabelQListWidget
 from labelme.widgets import ToolBar
 from labelme.widgets import ZoomWidget
+from . import utils
 
 
 # FIXME
@@ -860,10 +858,9 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = self.labelList.get_shape_from_item(item)
         if shape is None:
             return
-        result = self.labelDialog.popUp(shape.label, flags=shape.flags)
-        if result is None:
+        text, flags, extended = self.labelDialog.popUp(shape.label, flags=shape.flags)
+        if text is None:
             return
-        text, flags, extended = result
         if not self.validateLabel(text):
             self.errorMessage('Invalid label',
                               "Invalid label '{}' with validation type '{}'"
@@ -1061,6 +1058,7 @@ class MainWindow(QtWidgets.QMainWindow):
         items = self.uniqLabelList.selectedItems()
         text = None
         flags = {}
+        extended = None
         if items:
             text = items[0].text()
         if self._config['display_label_popup'] or not text:
@@ -1075,7 +1073,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     instance_text = previous_label
                 if instance_text != '':
                     text = instance_text
-            text, flags = self.labelDialog.popUp(text)
+            text, flags, extended = self.labelDialog.popUp(text)
             if text is None:
                 self.labelDialog.edit.setText(previous_label)
 
@@ -1086,7 +1084,7 @@ class MainWindow(QtWidgets.QMainWindow):
             text = ''
         if text:
             self.labelList.clearSelection()
-            self.addLabel(self.canvas.setLastLabel(text, flags))
+            self.addLabel(self.canvas.setLastLabel(text, flags, extended))
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)
