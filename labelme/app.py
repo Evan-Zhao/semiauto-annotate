@@ -981,20 +981,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def saveLabels(self, filename):
         lf = LabelFile()
-
-        def format_shape(s):
-            return dict(
-                label=s.label.encode('utf-8') if PY2 else s.label,
-                line_color=s.line_color.getRgb()
-                if s.line_color != self.lineColor else None,
-                fill_color=s.fill_color.getRgb()
-                if s.fill_color != self.fillColor else None,
-                points=[(p.x(), p.y()) for p in s.points],
-                shape_type=s.shape_type,
-                flags=s.flags
-            )
-
-        shapes = [format_shape(shape) for shape in self.labelList.shapes]
+        shapes = [
+            shape.toJson(defFillColor=self.fillColor, defLineColor=self.lineColor)
+            for shape in self.labelList.shapes
+        ]
         flags = {}
         for i in range(self.flag_widget.count()):
             item = self.flag_widget.item(i)

@@ -5,7 +5,7 @@ from qtpy import QtCore
 from qtpy import QtGui
 
 import labelme.utils
-
+from labelme import PY2
 
 # TODO(unknown):
 # - [opt] Store paths instead of creating new ones at each paint.
@@ -20,7 +20,6 @@ DEFAULT_HVERTEX_FILL_COLOR = QtGui.QColor(255, 0, 0)
 
 
 class Shape(object):
-
     P_SQUARE, P_ROUND = 0, 1
 
     MOVE_VERTEX, NEAR_VERTEX = 0, 1
@@ -72,7 +71,7 @@ class Shape(object):
         if value is None:
             value = 'polygon'
         if value not in ['polygon', 'rectangle', 'point',
-           'line', 'circle', 'linestrip']:
+                         'line', 'circle', 'linestrip']:
             raise ValueError('Unexpected shape_type: {}'.format(value))
         self._shape_type = value
 
@@ -243,6 +242,19 @@ class Shape(object):
 
     def copy(self):
         return copy.deepcopy(self)
+
+    def toJson(self, defLineColor, defFillColor):
+        return dict(
+            label=self.label.encode('utf-8') if PY2 else self.label,
+            line_color=self.line_color.getRgb()
+            if self.line_color != defLineColor else None,
+            fill_color=self.fill_color.getRgb()
+            if self.fill_color != defFillColor else None,
+            points=[(p.x(), p.y()) for p in self.points],
+            shape_type=self.shape_type,
+            flags=self.flags,
+            extended=self.extended
+        )
 
     def __len__(self):
         return len(self.points)
