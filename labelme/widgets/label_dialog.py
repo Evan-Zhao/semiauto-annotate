@@ -29,8 +29,7 @@ class LabelQLineEdit(QtWidgets.QLineEdit):
 
 class LabelDialog(QtWidgets.QDialog):
 
-    def __init__(self, text="Enter object label", parent=None,
-                 labels=None, sublabels=None,
+    def __init__(self, text="Enter object label", parent=None, labels=None,
                  sort_labels=True, show_text_field=True,
                  completion='startswith', fit_to_content=None, flags=None):
         if fit_to_content is None:
@@ -38,15 +37,30 @@ class LabelDialog(QtWidgets.QDialog):
         self._fit_to_content = fit_to_content
 
         super(LabelDialog, self).__init__(parent)
+
+        # Dialog layout
+        layout = QtWidgets.QVBoxLayout()
+        splitter = QtWidgets.QSplitter()
+        layout.addWidget(splitter)
+        self.setLayout(layout)
+        # Left side layout
+        leftGroup = QtWidgets.QGroupBox()
+        leftLayout = QtWidgets.QVBoxLayout()
+        leftGroup.setLayout(leftLayout)
+        splitter.addWidget(leftGroup)
+        # Right side layout
+        self.rightStack = QtWidgets.QStackedWidget()
+        splitter.addWidget(self.rightStack)
+
+        # Edit box
         self.edit = LabelQLineEdit()
         self.edit.setPlaceholderText(text)
         self.edit.setValidator(labelme.utils.labelValidator())
         self.edit.editingFinished.connect(self.postProcess)
         if flags:
             self.edit.textChanged.connect(self.updateFlags)
-        layout = QtWidgets.QGridLayout()
         if show_text_field:
-            layout.addWidget(self.edit, 0, 0)
+            leftLayout.addWidget(self.edit)
         # buttons
         self.buttonBox = bb = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel,
@@ -57,20 +71,14 @@ class LabelDialog(QtWidgets.QDialog):
         bb.button(bb.Cancel).setIcon(labelme.utils.newIcon('undo'))
         bb.accepted.connect(self.validate)
         bb.rejected.connect(self.reject)
-        layout.addWidget(bb, 1, 0)
+        leftLayout.addWidget(bb)
         # label_list
         self.labelList = QtWidgets.QListWidget()
-        if self._fit_to_content['row']:
-            self.labelList.setHorizontalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
-            )
-        if self._fit_to_content['column']:
-            self.labelList.setVerticalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
-            )
+        LabelDialog.set_scroll_bar(self.labelList, self._fit_to_content)
         self._sort_labels = sort_labels
+        self._labels = labels
         if labels:
-            self.labelList.addItems(labels)
+            self.labelList.addItems(labels.keys())
         if self._sort_labels:
             self.labelList.sortItems()
         else:
@@ -78,22 +86,25 @@ class LabelDialog(QtWidgets.QDialog):
                 QtWidgets.QAbstractItemView.InternalMove)
         self.labelList.currentItemChanged.connect(self.labelSelected)
         self.edit.setListWidget(self.labelList)
-        layout.addWidget(self.labelList, 2, 0)
-        # sublabel
-        if sublabels is None:
-            sublabels = {}
-        self._sublabels = sublabels
-        self.sublabelsLayout = QtWidgets.QVBoxLayout()
-        layout.addItem(self.sublabelsLayout, 0, 1, 4, 1)
+        leftLayout.addWidget(self.labelList)
         # label_flags
-        if flags is None:
-            flags = {}
-        self._flags = flags
+        self._flags = {} if flags is None else flags
+        flagsBox = QtWidgets.QGroupBox()
         self.flagsLayout = QtWidgets.QVBoxLayout()
+        flagsBox.setLayout(self.flagsLayout)
         self.resetFlags()
-        layout.addItem(self.flagsLayout, 3, 0)
+        leftLayout.addWidget(flagsBox)
         self.edit.textChanged.connect(self.updateFlags)
-        self.setLayout(layout)
+        # sublabel / form (for lane)
+        blankPage = QtWidgets.QGroupBox(self.rightStack)
+        self.sublabelList = QtWidgets.QListWidget(self.rightStack)
+        self.laneForm = QtWidgets.QGroupBox(self.rightStack)
+        self.laneFormLayout = QtWidgets.QFormLayout()
+        self.laneForm.setLayout(self.laneFormLayout)
+        self.rightStack.addWidget(blankPage)
+        self.rightStack.addWidget(self.sublabelList)
+        self.rightStack.addWidget(self.laneForm)
+
         # completion
         completer = QtWidgets.QCompleter()
         if not QT5 and completion != 'startswith':
@@ -114,6 +125,17 @@ class LabelDialog(QtWidgets.QDialog):
         completer.setModel(self.labelList.model())
         self.edit.setCompleter(completer)
 
+    @staticmethod
+    def set_scroll_bar(component, fit_to_content):
+        if fit_to_content['row']:
+            component.setHorizontalScrollBarPolicy(
+                QtCore.Qt.ScrollBarAlwaysOff
+            )
+        if fit_to_content['column']:
+            component.setVerticalScrollBarPolicy(
+                QtCore.Qt.ScrollBarAlwaysOff
+            )
+
     def addLabelHistory(self, label):
         if self.labelList.findItems(label, QtCore.Qt.MatchExactly):
             return
@@ -121,8 +143,34 @@ class LabelDialog(QtWidgets.QDialog):
         if self._sort_labels:
             self.labelList.sortItems()
 
+    @staticmethod
+    def clearLayout(layout):
+        for i in range(layout.count()):
+            layout.itemAt(i).widget().deleteLater()
+
     def labelSelected(self, item):
         self.edit.setText(item.text())
+        # Set to blank page by default
+        self.rightStack.setCurrentIndex(0)
+        if item.text() not in self._labels:
+            return
+        spec = self._labels[item.text()]
+        if type(spec) is list:
+            # Set to page 0
+            self.rightStack.setCurrentIndex(1)
+            self.sublabelList.clear()
+            self.sublabelList.addItems(spec)
+        elif type(spec) is dict:
+            # Set to page 1
+            self.rightStack.setCurrentIndex(2)
+            LabelDialog.clearLayout(self.laneFormLayout)
+            for key, values in spec.items():
+                label = QtWidgets.QLabel(key, self)
+                combo = QtWidgets.QComboBox(self)
+                combo.addItems(values)
+                label.show()
+                combo.show()
+                self.laneFormLayout.addRow(label, combo)
 
     def validate(self):
         text = self.edit.text()

@@ -6,46 +6,53 @@ keep_prev: false
 logger_level: info
 
 flags: null
-label_flags: 
+label_flags:
   .*: [occluded, truncated]
-  # traffic sign: [
-  #   speed limit,
-  #   end speed limit,
-  #   stop,
-  #   no entry,
-  #   right turn,
-  #   left turn,
-  #   keep straight,
-  #   keep left,
-  #   keep right,
-  #   traffic cone,
-  #   other signs
-  # ]
-  # traffic light: [
-  #   red,
-  #   yellow,
-  #   blue,
-  #   unknown
-  # ]
-  # driveway.*: [
-  #   current,
-  #   alternative
-  # ]
 
-labels: [
-  bike,
-  bus,
-  car,
-  motor,
-  train,
-  truck,
-  rider,
-  person,
-  traffic light,
-  traffic sign,
-  driveway(可行驶区域),
-  lane
-]
+labels:
+  bike: null
+  bus: null
+  car: null
+  motor: null
+  train: null
+  truck: null
+  rider: null
+  person: null
+  traffic light: [
+    red,
+    yellow,
+    blue,
+    unknown
+  ]
+  traffic sign: [
+    speed limit,
+    end speed limit,
+    stop,
+    no entry,
+    right turn,
+    left turn,
+    keep straight,
+    keep left,
+    keep right,
+    traffic cone,
+    other signs
+  ]
+  driveway(可行驶区域): [
+    current,
+    alternative
+  ]
+  lane:
+    directions: [horizontal, vertical]
+    type: [
+      curb,
+      single yellow,
+      double yellow,
+      single white,
+      double white,
+      crossing
+    ]
+    line type: [dotted, solid]
+
 file_search: null
 sort_labels: true
 validate_label: null
