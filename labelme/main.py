@@ -3,16 +3,15 @@ import codecs
 import logging
 import os
 import sys
+
 import yaml
-
-from qtpy import QtWidgets
-
 from labelme import __appname__
 from labelme import __version__
 from labelme.app import MainWindow
 from labelme.config import get_config
 from labelme.logger import logger
 from labelme.utils import newIcon
+from qtpy import QtWidgets
 
 
 def main():
@@ -51,6 +50,11 @@ def main():
         action='store_false',
         help='stop storing image data to JSON file',
         default=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        '--default_config',
+        action='store_true',
+        help='use default config file instead of user config'
     )
     parser.add_argument(
         '--autosave',
@@ -138,7 +142,8 @@ def main():
     filename = config_from_args.pop('filename')
     output = config_from_args.pop('output')
     config_file = config_from_args.pop('config_file')
-    config = get_config(config_from_args, config_file)
+    use_default_config = config_from_args.pop('default_config')
+    config = get_config(config_from_args, None if use_default_config else config_file)
 
     if not config['labels'] and config['validate_label']:
         logger.error('--labels must be specified with --validatelabel or '
