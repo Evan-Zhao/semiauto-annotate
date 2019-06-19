@@ -53,6 +53,20 @@ labels:
     ]
     line type: [dotted, solid]
 
+label_color:
+  bike: 0xFFB300 # Vivid Yellow
+  bus: 0x803E75 # Strong Purple
+  car: 0xFF6800 # Vivid Orange
+  motor: 0xA6BDD7 # Very Light Blue
+  train: 0xC10020 # Vivid Red
+  truck: 0xCEA262 # Grayish Yellow
+  rider: 0x817066 # Medium Gray
+  person: 0x007D34 # Vivid Green
+  traffic light: 0xF6768E # Strong Purplish Pink
+  traffic sign: 0x00538A # Strong Blue
+  driveway(可行驶区域): 0xFF7A5C # Strong Yellowish Pink
+  lane: 0x53377A # Strong Violet
+
 file_search: null
 sort_labels: true
 validate_label: null

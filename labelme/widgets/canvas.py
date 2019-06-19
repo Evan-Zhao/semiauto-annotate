@@ -35,6 +35,7 @@ class Canvas(QtWidgets.QWidget):
 
     def __init__(self, *args, **kwargs):
         self.epsilon = kwargs.pop('epsilon', 10.0)
+        self.label_color = kwargs.pop('label_color')
         super(Canvas, self).__init__(*args, **kwargs)
         # Initialise local state.
         self.mode = self.EDIT
@@ -662,10 +663,16 @@ class Canvas(QtWidgets.QWidget):
             self.finalise()
 
     def setLastLabel(self, text, flags, extended):
+        def hexIntToQColor(val):
+            hexStr = hex(val)[2:]
+            r, g, b = tuple(int(hexStr[i:i + 2], 16) for i in (0, 2, 4))
+            return QtGui.QColor(r, g, b)
+
         assert text
         self.shapes[-1].label = text
         self.shapes[-1].flags = flags
         self.shapes[-1].extended = extended
+        self.shapes[-1].line_color = hexIntToQColor(self.label_color[text])
         self.shapesBackups.pop()
         self.storeShapes()
         return self.shapes[-1]
