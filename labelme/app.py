@@ -860,9 +860,10 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = self.labelList.get_shape_from_item(item)
         if shape is None:
             return
-        text, flags = self.labelDialog.popUp(shape.label, flags=shape.flags)
-        if text is None:
+        result = self.labelDialog.popUp(shape.label, flags=shape.flags)
+        if result is None:
             return
+        text, flags, extended = result
         if not self.validateLabel(text):
             self.errorMessage('Invalid label',
                               "Invalid label '{}' with validation type '{}'"
@@ -870,6 +871,7 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         shape.label = text
         shape.flags = flags
+        shape.extended = extended
         item.setText(text)
         self.setDirty()
         if not self.uniqLabelList.findItems(text, Qt.MatchExactly):

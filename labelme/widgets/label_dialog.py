@@ -229,6 +229,25 @@ class LabelDialog(QtWidgets.QDialog):
             flags[item.text()] = item.isChecked()
         return flags
 
+    def collectCurrentState(self):
+        def collectFormDict(layout):
+            ret = {}
+            while layout.rowCount() > 0:
+                row = layout.takeRow(0)
+                label, field = row.labelItem.widget(), row.fieldItem.widget(),
+                ret[label.text()] = field.currentText()
+            return ret
+
+        idx = self.rightStack.currentIndex()
+        if idx == 0:
+            extended = None
+        elif idx == 1:
+            extended = self.sublabelList.currentItem().text()
+        else:
+            assert idx == 2
+            extended = collectFormDict(self.laneFormLayout)
+        return self.edit.text(), self.getFlags(), extended
+
     def popUp(self, text=None, move=True, flags=None):
         if self._fit_to_content['row']:
             self.labelList.setMinimumHeight(
@@ -258,6 +277,6 @@ class LabelDialog(QtWidgets.QDialog):
         if move:
             self.move(QtGui.QCursor.pos())
         if self.exec_():
-            return self.edit.text(), self.getFlags()
+            return self.collectCurrentState()
         else:
-            return None, None
+            return None
