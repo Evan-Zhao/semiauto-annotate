@@ -35,15 +35,13 @@ class Shape(object):
     point_size = 8
     scale = 1.0
 
-    def __init__(self, label=None, line_color=None, shape_type=None,
-                 flags=None):
+    def __init__(self, label=None, line_color=None, shape_type=None):
         self.label = label
         self.points = []
         self.fill = False
         self.selected = False
         self.shape_type = shape_type
-        self.flags = flags
-        self.extended = None
+        self.form = None
 
         self._highlightIndex = None
         self._highlightMode = self.NEAR_VERTEX
@@ -251,9 +249,7 @@ class Shape(object):
             fill_color=self.fill_color.getRgb()
             if self.fill_color != defFillColor else None,
             points=[(p.x(), p.y()) for p in self.points],
-            shape_type=self.shape_type,
-            flags=self.flags,
-            extended=self.extended
+            shape_type=self.shape_type
         )
 
     def __len__(self):

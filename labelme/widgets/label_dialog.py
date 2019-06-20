@@ -1,5 +1,3 @@
-import re
-
 from qtpy import QT_VERSION
 from qtpy import QtCore
 from qtpy import QtGui
@@ -29,101 +27,159 @@ class LabelQLineEdit(QtWidgets.QLineEdit):
 
 class LabelDialog(QtWidgets.QDialog):
 
-    def __init__(self, text="Enter object label", parent=None, labels=None,
+    def __init__(self, text="Enter object label", parent=None, labels=None, label_flags=None,
                  sort_labels=True, show_text_field=True,
-                 completion='startswith', fit_to_content=None, flags=None):
+                 completion='startswith', fit_to_content=None):
+        super(LabelDialog, self).__init__(parent)
+        self._placeholder = text
+        self._show_text_field = show_text_field
+        self._sort_labels = sort_labels
+        self._labels = labels
+        self._label_flags = {} if label_flags is None else label_flags
+        self._boxes = []
+        self._collect_actions = {}
+        self.response = {}
         if fit_to_content is None:
             fit_to_content = {'row': False, 'column': True}
         self._fit_to_content = fit_to_content
-
-        super(LabelDialog, self).__init__(parent)
+        self.completion = completion
+        if not QT5 and self.completion != 'startswith':
+            logger.warn(
+                "completion other than 'startswith' is only "
+                "supported with Qt5. Using 'startswith'"
+            )
+            self.completion = 'startswith'
 
         # Dialog layout
         layout = QtWidgets.QVBoxLayout()
-        splitter = QtWidgets.QSplitter()
-        layout.addWidget(splitter)
+        self.splitter = QtWidgets.QSplitter()
+        layout.addWidget(self.splitter)
         self.setLayout(layout)
-        # Left side layout
-        leftGroup = QtWidgets.QGroupBox()
-        leftLayout = QtWidgets.QVBoxLayout()
-        leftGroup.setLayout(leftLayout)
-        splitter.addWidget(leftGroup)
-        # Right side layout
-        self.rightStack = QtWidgets.QStackedWidget()
-        splitter.addWidget(self.rightStack)
-
-        # Edit box
-        self.edit = LabelQLineEdit()
-        self.edit.setPlaceholderText(text)
-        self.edit.setValidator(labelme.utils.labelValidator())
-        self.edit.editingFinished.connect(self.postProcess)
-        if flags:
-            self.edit.textChanged.connect(self.updateFlags)
-        if show_text_field:
-            leftLayout.addWidget(self.edit)
+        # Leftmost groupbox
+        topLevelGroupBox = self.make_group_box(labels, self._collect_actions)
+        self.splitter.addWidget(topLevelGroupBox)
         # buttons
-        self.buttonBox = bb = QtWidgets.QDialogButtonBox(
+        bb = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel,
             QtCore.Qt.Horizontal,
             self,
         )
         bb.button(bb.Ok).setIcon(labelme.utils.newIcon('done'))
         bb.button(bb.Cancel).setIcon(labelme.utils.newIcon('undo'))
-        bb.accepted.connect(self.validate)
+        bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
-        leftLayout.addWidget(bb)
-        # label_list
-        self.labelList = QtWidgets.QListWidget()
-        LabelDialog.set_scroll_bar(self.labelList, self._fit_to_content)
-        self._sort_labels = sort_labels
-        self._labels = labels
-        if labels:
-            self.labelList.addItems(labels.keys())
-        if self._sort_labels:
-            self.labelList.sortItems()
-        else:
-            self.labelList.setDragDropMode(
-                QtWidgets.QAbstractItemView.InternalMove)
-        self.labelList.currentItemChanged.connect(self.labelSelected)
-        self.edit.setListWidget(self.labelList)
-        leftLayout.addWidget(self.labelList)
-        # label_flags
-        self._flags = {} if flags is None else flags
-        flagsBox = QtWidgets.QGroupBox()
-        self.flagsLayout = QtWidgets.QVBoxLayout()
-        flagsBox.setLayout(self.flagsLayout)
-        self.resetFlags()
-        leftLayout.addWidget(flagsBox)
-        self.edit.textChanged.connect(self.updateFlags)
-        # sublabel / form (for lane)
-        blankPage = QtWidgets.QGroupBox(self.rightStack)
-        self.sublabelList = QtWidgets.QListWidget(self.rightStack)
-        self.laneForm = QtWidgets.QGroupBox(self.rightStack)
-        self.laneFormLayout = QtWidgets.QFormLayout()
-        self.laneForm.setLayout(self.laneFormLayout)
-        self.rightStack.addWidget(blankPage)
-        self.rightStack.addWidget(self.sublabelList)
-        self.rightStack.addWidget(self.laneForm)
+        layout.addWidget(bb)
 
+    def make_group_box(self, labels, collect_actions):
+        label_items = list(labels.keys())
+        if '__flags' in labels:
+            flags = labels['__flags']
+            label_items.remove('__flags')
+        else:
+            flags = []
+        # Group box (parent)
+        group_box = QtWidgets.QGroupBox(self)
+        verticalLayout = QtWidgets.QVBoxLayout()
+        group_box.setLayout(verticalLayout)
+        # Edit box
+        edit = LabelQLineEdit(group_box)
+        edit.setPlaceholderText(self._placeholder)
+        edit.setValidator(labelme.utils.labelValidator())
+        edit.editingFinished.connect(self.post_process)
+        if self._show_text_field:
+            verticalLayout.addWidget(edit)
+        # Label list
+        label_list = QtWidgets.QListWidget(group_box)
+        LabelDialog.set_scroll_bar(label_list, self._fit_to_content)
+        label_list.addItems(label_items)
+        if self._sort_labels:
+            label_list.sortItems()
+        else:
+            label_list.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
+        label_list.currentItemChanged.connect(self.labelSelected)
+        edit.setListWidget(label_list)
+        verticalLayout.addWidget(label_list)
+        collect_actions['__label'] = \
+            lambda label_list=label_list: LabelDialog.get_label_list_selected(label_list)
         # completion
         completer = QtWidgets.QCompleter()
-        if not QT5 and completion != 'startswith':
-            logger.warn(
-                "completion other than 'startswith' is only "
-                "supported with Qt5. Using 'startswith'"
-            )
-            completion = 'startswith'
-        if completion == 'startswith':
+        if self.completion == 'startswith':
             completer.setCompletionMode(QtWidgets.QCompleter.InlineCompletion)
             # Default settings.
             # completer.setFilterMode(QtCore.Qt.MatchStartsWith)
-        elif completion == 'contains':
+        elif self.completion == 'contains':
             completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
             completer.setFilterMode(QtCore.Qt.MatchContains)
         else:
-            raise ValueError('Unsupported completion: {}'.format(completion))
-        completer.setModel(self.labelList.model())
-        self.edit.setCompleter(completer)
+            raise ValueError('Unsupported completion: {}'.format(self.completion))
+        completer.setModel(label_list.model())
+        # Label flags
+        flagsBox = QtWidgets.QGroupBox(group_box)
+        flagsLayout = QtWidgets.QFormLayout()
+        flagsBox.setLayout(flagsLayout)
+        actions = self.set_flags_on(flagsBox, flags)
+        collect_actions['__flags'] = actions
+        group_box.layout().addWidget(flagsBox)
+        # self.edit.textChanged.connect(self.updateFlags)
+        # Special label flags
+        special_flags_box = QtWidgets.QGroupBox(group_box)
+        flagsLayout = QtWidgets.QFormLayout()
+        special_flags_box.setLayout(flagsLayout)
+        group_box.layout().addWidget(special_flags_box)
+        # Add self to list
+        self._boxes.append(group_box)
+        # Adjust dialog size
+        if self._fit_to_content['column']:
+            total_width = sum(
+                LabelDialog.get_min_width_for_box(box) for box in self._boxes
+            )
+            self.setMinimumWidth(total_width)
+        if self._fit_to_content['row']:
+            max_height = max(
+                LabelDialog.get_min_height_for_box(box) for box in self._boxes
+            )
+            self.setMinimumHeight(max_height)
+        return group_box
+
+    @staticmethod
+    def get_edit_from_box(box):
+        return box.layout().itemAt(0).widget()
+
+    @staticmethod
+    def get_list_from_box(box):
+        return box.layout().itemAt(1).widget()
+
+    @staticmethod
+    def get_special_flags_from_box(box):
+        return box.layout().itemAt(3).widget()
+
+    @staticmethod
+    def get_min_width_for_box(box):
+        label_list = LabelDialog.get_list_from_box(box)
+        return label_list.sizeHintForColumn(0) * 1.5
+
+    @staticmethod
+    def get_min_height_for_box(box):
+        label_list = LabelDialog.get_list_from_box(box)
+        return label_list.sizeHintForRow(0) * label_list.count() * 1.2
+
+    def find_dicts(self, box):
+        def walk_dict(d):
+            current = d
+            for box in self._boxes[:idx]:
+                label_list = LabelDialog.get_list_from_box(box)
+                level_i_selected = LabelDialog.get_label_list_selected(label_list)
+                current = current[level_i_selected]
+            return current
+
+        idx = self._boxes.index(box)
+        return idx, walk_dict(self._labels), walk_dict(self._collect_actions)
+
+    @staticmethod
+    def get_label_list_selected(label_list):
+        # Single selection boxes, only one can be selected
+        selected = label_list.selectedItems()
+        return selected[0].text() if selected else None
 
     @staticmethod
     def set_scroll_bar(component, fit_to_content):
@@ -137,146 +193,133 @@ class LabelDialog(QtWidgets.QDialog):
             )
 
     def addLabelHistory(self, label):
+        return
         if self.labelList.findItems(label, QtCore.Qt.MatchExactly):
             return
         self.labelList.addItem(label)
         if self._sort_labels:
             self.labelList.sortItems()
 
-    @staticmethod
-    def clearLayout(layout):
-        for i in range(layout.count()):
-            layout.itemAt(i).widget().deleteLater()
+    def remove_last_label_effect(self, level, actions, text):
+        def clear_layout(layout):
+            for i in range(layout.count()):
+                layout.itemAt(i).widget().deleteLater()
+
+        actions[text] = None
+        actions['__special_flags'] = None
+        special_flags_box = self.get_special_flags_from_box(self._boxes[level])
+        clear_layout(special_flags_box.layout())
+        for box in self._boxes[level + 1:]:
+            box.deleteLater()
+        self._boxes = self._boxes[:level + 1]
 
     def labelSelected(self, item):
-        self.edit.setText(item.text())
-        # Set to blank page by default
-        self.rightStack.setCurrentIndex(0)
-        if item.text() not in self._labels:
-            return
-        spec = self._labels[item.text()]
+        label_list = item.listWidget()
+        box = label_list.parent()
+        edit = LabelDialog.get_edit_from_box(box)
+        edit.setText(item.text())
+
+        idx, labels, actions = self.find_dicts(box)
+        self.remove_last_label_effect(idx, actions, item.text())
+
+        spec = labels[item.text()]
         if type(spec) is list:
-            # Set to page 0
-            self.rightStack.setCurrentIndex(1)
-            self.sublabelList.clear()
-            self.sublabelList.addItems(spec)
+            special_flags_box = self.get_special_flags_from_box(box)
+            flag_actions = self.set_flags_on(special_flags_box, spec)
+            actions['__special_flags'] = flag_actions
         elif type(spec) is dict:
-            # Set to page 1
-            self.rightStack.setCurrentIndex(2)
-            LabelDialog.clearLayout(self.laneFormLayout)
-            for key, values in spec.items():
-                label = QtWidgets.QLabel(key, self)
-                combo = QtWidgets.QComboBox(self)
-                combo.addItems(values)
+            next_level_actions = {}
+            next_level = self.make_group_box(spec, next_level_actions)
+            self._collect_actions[item.text()] = next_level_actions
+            self.splitter.addWidget(next_level)
+
+    def post_process(self):
+        edit = self.sender()
+        text = edit.text()
+        if hasattr(text, 'strip'):
+            text = text.strip()
+        else:
+            text = text.trimmed()
+        edit.setText(text)
+
+    def set_flags_on(self, widget, flags):
+        layout = widget.layout()
+        actions = {}
+        for v in flags:
+            spec = self._label_flags[v]
+            if spec == 'bool':
+                item = QtWidgets.QCheckBox(v, widget)
+                layout.addRow(item)
+                actions[v] = lambda item=item: item.isChecked()
+                item.show()
+            elif spec == 'int':
+                label = QtWidgets.QLabel(v, widget)
+                edit = QtWidgets.QLineEdit(widget)
+                layout.addRow(label, edit)
+                actions[v] = lambda edit=edit: edit.text()
+                label.show()
+                edit.show()
+            elif type(spec) == list:
+                label = QtWidgets.QLabel(v, widget)
+                combo = QtWidgets.QComboBox(widget)
+                combo.addItems(spec)
+                layout.addRow(label, combo)
+                actions[v] = lambda combo=combo: combo.currentText()
                 label.show()
                 combo.show()
-                self.laneFormLayout.addRow(label, combo)
+            else:
+                assert False
+        return actions
 
-    def validate(self):
-        text = self.edit.text()
-        if hasattr(text, 'strip'):
-            text = text.strip()
-        else:
-            text = text.trimmed()
-        if text:
-            self.accept()
+    @staticmethod
+    def collect_state_recursive(action):
+        response = {}
+        if '__flags' in action:
+            response['__flags'] = {}
+            for flag, act in action['__flags'].items():
+                response['__flags'][flag] = act()
+        label = action['__label']()
+        next_action = action.get(label, None)
+        response['__label'] = label
+        response[label] = None if next_action is None else LabelDialog.collect_state_recursive(next_action)
+        return response
 
-    def postProcess(self):
-        text = self.edit.text()
-        if hasattr(text, 'strip'):
-            text = text.strip()
-        else:
-            text = text.trimmed()
-        self.edit.setText(text)
-
-    def updateFlags(self, label_new):
-        # keep state of shared flags
-        flags_old = self.getFlags()
-
-        flags_new = {}
-        for pattern, keys in self._flags.items():
-            if re.match(pattern, label_new):
-                for key in keys:
-                    flags_new[key] = flags_old.get(key, False)
-        self.setFlags(flags_new)
-
-    def deleteFlags(self):
-        for i in reversed(range(self.flagsLayout.count())):
-            item = self.flagsLayout.itemAt(i).widget()
-            self.flagsLayout.removeWidget(item)
-            item.setParent(None)
-
-    def resetFlags(self, label=''):
-        flags = {}
-        for pattern, keys in self._flags.items():
-            if re.match(pattern, label):
-                for key in keys:
-                    flags[key] = False
-        self.setFlags(flags)
-
-    def setFlags(self, flags):
-        self.deleteFlags()
-        for key in flags:
-            item = QtWidgets.QCheckBox(key, self)
-            item.setChecked(flags[key])
-            self.flagsLayout.addWidget(item)
-            item.show()
-
-    def getFlags(self):
-        flags = {}
-        for i in range(self.flagsLayout.count()):
-            item = self.flagsLayout.itemAt(i).widget()
-            flags[item.text()] = item.isChecked()
-        return flags
-
-    def collectCurrentState(self):
-        def collectFormDict(layout):
-            ret = {}
-            while layout.rowCount() > 0:
-                row = layout.takeRow(0)
-                label, field = row.labelItem.widget(), row.fieldItem.widget(),
-                ret[label.text()] = field.currentText()
-            return ret
-
-        idx = self.rightStack.currentIndex()
-        if idx == 0:
-            extended = None
-        elif idx == 1:
-            extended = self.sublabelList.currentItem().text()
-        else:
-            assert idx == 2
-            extended = collectFormDict(self.laneFormLayout)
-        return self.edit.text(), self.getFlags(), extended
+    def collect_current_state(self):
+        return LabelDialog.collect_state_recursive(self._collect_actions)
 
     def popUp(self, text=None, move=True, flags=None):
-        if self._fit_to_content['row']:
-            self.labelList.setMinimumHeight(
-                self.labelList.sizeHintForRow(0) * self.labelList.count() + 2
-            )
-        if self._fit_to_content['column']:
-            self.labelList.setMinimumWidth(
-                self.labelList.sizeHintForColumn(0) + 2
-            )
+        def validate_result(self):
+            return True
+            # TODO
+            # text = self.edit.text()
+            # if hasattr(text, 'strip'):
+            #     text = text.strip()
+            # else:
+            #     text = text.trimmed()
+            # if text:
+
         # if text is None, the previous label in self.edit is kept
-        if text is None:
-            text = self.edit.text()
-        if flags:
-            self.setFlags(flags)
-        else:
-            self.resetFlags(text)
-        self.edit.setText(text)
-        self.edit.setSelection(0, len(text))
-        items = self.labelList.findItems(text, QtCore.Qt.MatchFixedString)
-        if items:
-            if len(items) != 1:
-                logger.warning("Label list has duplicate '{}'".format(text))
-            self.labelList.setCurrentItem(items[0])
-            row = self.labelList.row(items[0])
-            self.edit.completer().setCurrentRow(row)
-        self.edit.setFocus(QtCore.Qt.PopupFocusReason)
+        # if text is None:
+        #     text = self.edit.text()
+        # if flags:
+        #     self.setFlags(flags)
+        # else:
+        #     self.resetFlags(text)
+        # self.edit.setText(text)
+        # self.edit.setSelection(0, len(text))
+        # items = self.labelList.findItems(text, QtCore.Qt.MatchFixedString)
+        # if items:
+        #     if len(items) != 1:
+        #         logger.warning("Label list has duplicate '{}'".format(text))
+        #     self.labelList.setCurrentItem(items[0])
+        #     row = self.labelList.row(items[0])
+        #     self.edit.completer().setCurrentRow(row)
+        # self.edit.setFocus(QtCore.Qt.PopupFocusReason)
         if move:
             self.move(QtGui.QCursor.pos())
         if self.exec_():
-            return self.collectCurrentState()
-        else:
-            return None, None, None
+            result = self.collect_current_state()
+            if validate_result(result):
+                text = list(set(result.keys()) - {'__flags'})[0]
+                return text, result
+        return None, None

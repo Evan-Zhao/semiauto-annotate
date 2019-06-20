@@ -662,7 +662,7 @@ class Canvas(QtWidgets.QWidget):
         elif key == QtCore.Qt.Key_Return and self.canCloseShape():
             self.finalise()
 
-    def setLastLabel(self, text, flags, extended):
+    def setLastLabel(self, text, form):
         def hexIntToQColor(val):
             hexStr = hex(val)[2:]
             r, g, b = tuple(int(hexStr[i:i + 2], 16) for i in (0, 2, 4))
@@ -670,8 +670,7 @@ class Canvas(QtWidgets.QWidget):
 
         assert text
         self.shapes[-1].label = text
-        self.shapes[-1].flags = flags
-        self.shapes[-1].extended = extended
+        self.shapes[-1].form = form
         self.shapes[-1].line_color = hexIntToQColor(self.label_color[text])
         self.shapesBackups.pop()
         self.storeShapes()

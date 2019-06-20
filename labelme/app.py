@@ -75,11 +75,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelDialog = LabelDialog(
             parent=self,
             labels=self._config['labels'],
+            label_flags=self._config['label_flags'],
             sort_labels=self._config['sort_labels'],
             show_text_field=self._config['show_label_text_field'],
             completion=self._config['label_completion'],
-            fit_to_content=self._config['fit_to_content'],
-            flags=self._config['label_flags']
+            fit_to_content=self._config['fit_to_content']
         )
 
         self.labelList = LabelQListWidget()
@@ -859,7 +859,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = self.labelList.get_shape_from_item(item)
         if shape is None:
             return
-        text, flags, extended = self.labelDialog.popUp(shape.label, flags=shape.flags)
+        text, form = self.labelDialog.popUp(shape.label, flags=shape.flags)
         if text is None:
             return
         if not self.validateLabel(text):
@@ -868,8 +868,7 @@ class MainWindow(QtWidgets.QMainWindow):
                               .format(text, self._config['validate_label']))
             return
         shape.label = text
-        shape.flags = flags
-        shape.extended = extended
+        shape.form = form
         item.setText(text)
         self.setDirty()
         if not self.uniqLabelList.findItems(text, Qt.MatchExactly):
@@ -1074,7 +1073,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     instance_text = previous_label
                 if instance_text != '':
                     text = instance_text
-            text, flags, extended = self.labelDialog.popUp(text)
+            text, form = self.labelDialog.popUp(text)
             if text is None:
                 self.labelDialog.edit.setText(previous_label)
 
@@ -1085,7 +1084,7 @@ class MainWindow(QtWidgets.QMainWindow):
             text = ''
         if text:
             self.labelList.clearSelection()
-            self.addLabel(self.canvas.setLastLabel(text, flags, extended))
+            self.addLabel(self.canvas.setLastLabel(text, form))
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)

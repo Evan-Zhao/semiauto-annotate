@@ -7,9 +7,15 @@ logger_level: info
 
 flags: null
 label_flags:
-  .*: [occluded, truncated]
+  occluded: bool
+  truncated: bool
+  visibility: [visible, occluded, outside-of-image]
+  directions: [horizontal, vertical]
+  line: [dotted, solid]
+  limit: int
 
 labels:
+  __flags: [occluded, truncated]
   bike: null
   bus: null
   car: null
@@ -18,40 +24,37 @@ labels:
   truck: null
   rider: null
   person: null
-  traffic light: [
-    red,
-    yellow,
-    blue,
-    unknown
-  ]
-  traffic sign: [
-    speed limit,
-    end speed limit,
-    stop,
-    no entry,
-    right turn,
-    left turn,
-    keep straight,
-    keep left,
-    keep right,
-    traffic cone,
-    other signs
-  ]
-  driveway(可行驶区域): [
-    current,
-    alternative
-  ]
+  traffic light:
+    red: null
+    yellow: null
+    blue: null
+    unknown: null
+  traffic sign:
+    speed limit: [limit]
+    end speed limit: null
+    stop: null
+    no entry: null
+    right turn: null
+    left turn: null
+    keep straight: null
+    keep left: null
+    keep right: null
+    traffic cone: null
+    other sign: null
+  driveway(可行驶区域):
+    current: null
+    alternative: null
   lane:
-    directions: [horizontal, vertical]
-    type: [
-      curb,
-      single yellow,
-      double yellow,
-      single white,
-      double white,
-      crossing
-    ]
-    line type: [dotted, solid]
+    __flags: [directions, line]
+    curb: null
+    single yellow: null
+    double yellow: null
+    single white: null
+    double white: null
+    crossing: null
+
+point_labels:
+  person: [右肩, 右肘, 右腕, 左肩, 左肘, 左腕, 右髋, 右膝, 右踝, 左髋, 左膝, 左踝, 头顶, 脖子]
 
 label_color:
   bike: 0xFFB300 # Vivid Yellow
