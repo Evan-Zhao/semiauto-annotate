@@ -31,6 +31,7 @@ class LabelDialog(QtWidgets.QDialog):
                  sort_labels=True, show_text_field=True,
                  completion='startswith', fit_to_content=None):
         super(LabelDialog, self).__init__(parent)
+        self._form = None
         self._placeholder = text
         self._show_text_field = show_text_field
         self._sort_labels = sort_labels
@@ -65,7 +66,7 @@ class LabelDialog(QtWidgets.QDialog):
         )
         bb.button(bb.Ok).setIcon(labelme.utils.newIcon('done'))
         bb.button(bb.Cancel).setIcon(labelme.utils.newIcon('undo'))
-        bb.accepted.connect(self.accept)
+        bb.accepted.connect(self.validate)
         bb.rejected.connect(self.reject)
         layout.addWidget(bb)
 
@@ -121,7 +122,6 @@ class LabelDialog(QtWidgets.QDialog):
         flagsBox.setLayout(flagsLayout)
         bindings['__flags'] = self.make_flags_on(flagsBox, flags)
         group_box.layout().addWidget(flagsBox)
-        # self.edit.textChanged.connect(self.updateFlags)
         # Special label flags
         special_flags_box = QtWidgets.QGroupBox(group_box)
         flagsLayout = QtWidgets.QFormLayout()
@@ -180,7 +180,9 @@ class LabelDialog(QtWidgets.QDialog):
     def get_label_list_selected(label_list):
         # Single selection boxes, only one can be selected
         selected = label_list.selectedItems()
-        return selected[0].text() if selected else None
+        if not selected:
+            raise ValueError('Select something!')
+        return selected[0].text()
 
     def set_label_list_selected(self, label_list, text):
         items = label_list.findItems(text, QtCore.Qt.MatchFixedString)
@@ -203,13 +205,13 @@ class LabelDialog(QtWidgets.QDialog):
                 QtCore.Qt.ScrollBarAlwaysOff
             )
 
-    def remove_last_label_effect(self, level, actions, text):
+    def remove_last_label_effect(self, level, bindings, text):
         def clear_layout(layout):
             for i in range(layout.count()):
                 layout.itemAt(i).widget().deleteLater()
 
-        actions[text] = None
-        actions['__special_flags'] = None
+        bindings[text] = None
+        bindings['__special_flags'] = None
         special_flags_box = self.get_special_flags_from_box(self._boxes[level])
         clear_layout(special_flags_box.layout())
         for box in self._boxes[level + 1:]:
@@ -222,22 +224,24 @@ class LabelDialog(QtWidgets.QDialog):
         edit = LabelDialog.get_edit_from_box(box)
         edit.setText(item.text())
 
-        idx, labels, actions = self.find_dicts(box)
-        self.remove_last_label_effect(idx, actions, item.text())
+        idx, labels, bindings = self.find_dicts(box)
+        self.remove_last_label_effect(idx, bindings, item.text())
 
         spec = labels[item.text()]
         if type(spec) is list:
             special_flags_box = self.get_special_flags_from_box(box)
             flag_actions = self.make_flags_on(special_flags_box, spec)
-            actions['__special_flags'] = flag_actions
+            bindings['__special_flags'] = flag_actions
         elif type(spec) is dict:
             next_bindings = {}
-            next_level = self.make_group_box(spec, next_bindings)
             self._bindings[item.text()] = next_bindings
+            next_level = self.make_group_box(spec, next_bindings)
             self.splitter.addWidget(next_level)
 
     def post_process(self):
         edit = self.sender()
+        if type(edit) is not QtWidgets.QLineEdit:
+            return
         text = edit.text()
         if hasattr(text, 'strip'):
             text = text.strip()
@@ -297,7 +301,10 @@ class LabelDialog(QtWidgets.QDialog):
         return response
 
     def collect_current_state(self):
-        return LabelDialog.collect_state_recursive(self._bindings)
+        try:
+            return LabelDialog.collect_state_recursive(self._bindings)
+        except ValueError:  # in case some label list has no selection
+            return None
 
     def set_state_recursive(self, bindings, form):
         flags = form['__flags']
@@ -310,17 +317,15 @@ class LabelDialog(QtWidgets.QDialog):
         if next_form is not None:
             self.set_state_recursive(next_bindings, next_form)
 
-    def popUp(self, text_or_form=None, move=True):
-        def validate_result(self):
-            return True
-            # TODO
-            # text = self.edit.text()
-            # if hasattr(text, 'strip'):
-            #     text = text.strip()
-            # else:
-            #     text = text.trimmed()
-            # if text:
+    def validate(self):
+        result = self.collect_current_state()
+        if result is not None:
+            self._form = result
+            self.accept()
+        else:
+            QtWidgets.QMessageBox.warning(self, 'Error', 'Label form is not complete')
 
+    def popUp(self, text_or_form=None, move=True):
         def dummy_form(text):
             return {
                 '__flags': {},
@@ -342,8 +347,7 @@ class LabelDialog(QtWidgets.QDialog):
         if move:
             self.move(QtGui.QCursor.pos())
         if self.exec_():
-            result = self.collect_current_state()
-            if validate_result(result):
-                text = list(set(result.keys()) - {'__flags'})[0]
-                return text, result
+            assert self._form is not None
+            text = list(set(self._form.keys()) - {'__flags'})[0]
+            return text, self._form
         return None, None

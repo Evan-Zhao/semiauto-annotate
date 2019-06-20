@@ -111,7 +111,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "Select label to start annotating for it. "
             "Press 'Esc' to deselect.")
         if self._config['labels']:
-            self.uniqLabelList.addItems(self._config['labels'])
+            self.uniqLabelList.addItems(set(self._config['labels']) - {'__flags'})
             self.uniqLabelList.sortItems()
         self.label_dock = QtWidgets.QDockWidget(u'Label List', self)
         self.label_dock.setObjectName(u'Label List')
