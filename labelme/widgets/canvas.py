@@ -239,16 +239,16 @@ class Canvas(QtWidgets.QWidget):
         prevPos = self.prevMovePoint
         self.prevMovePoint = pos
         # Transform pointer location by image offset
-        pos -= self.imagePos
+        relPos = pos - self.imagePos
         self.restoreCursor()
         # Polygon drawing.
         if self.drawing():
-            drawPolygon(pos - self.imagePos)
+            drawPolygon(relPos)
         # Polygon copy moving.
         elif QtCore.Qt.RightButton & ev.buttons():
             if self.selectedShapesCopy and self.prevPoint:
                 self.overrideCursor(CURSOR_MOVE)
-                self.boundedMoveShapes(self.selectedShapesCopy, pos)
+                self.boundedMoveShapes(self.selectedShapesCopy, relPos)
                 self.repaint()
             elif self.selectedShapes:
                 self.selectedShapesCopy = \
@@ -257,11 +257,11 @@ class Canvas(QtWidgets.QWidget):
         # Polygon/Vertex moving.
         elif QtCore.Qt.LeftButton & ev.buttons():
             if self.selectedVertex():
-                self.boundedMoveVertex(pos)
+                self.boundedMoveVertex(relPos)
                 self.movingShape = True
             elif self.selectedShapes and self.prevPoint:
                 self.overrideCursor(CURSOR_MOVE)
-                self.boundedMoveShapes(self.selectedShapes, pos)
+                self.boundedMoveShapes(self.selectedShapes, relPos)
                 self.movingShape = True
             # Nothing selected, drag canvas
             else:
@@ -276,7 +276,7 @@ class Canvas(QtWidgets.QWidget):
         else:
             self.setToolTip("Image")
             self.movingShape = False
-            findHighlight(pos)
+            findHighlight(relPos)
 
     def addPointToEdge(self):
         if (self.hShape is None and
