@@ -100,8 +100,8 @@ class LabelDialog(QtWidgets.QDialog):
         edit.setListWidget(label_list)
         verticalLayout.addWidget(label_list)
         bindings['__label'] = (
-            lambda l=label_list: LabelDialog.get_label_list_selected(l),
-            lambda val, l=label_list: self.set_label_list_selected(l, val)
+            lambda lst=label_list: LabelDialog.get_label_list_selected(lst),
+            lambda val, lst=label_list: self.set_label_list_selected(lst, val)
         )
         # completion
         completer = QtWidgets.QCompleter()
@@ -117,16 +117,18 @@ class LabelDialog(QtWidgets.QDialog):
         completer.setModel(label_list.model())
         edit.setCompleter(completer)
         # Label flags
-        flagsBox = QtWidgets.QGroupBox(group_box)
-        flagsLayout = QtWidgets.QFormLayout()
-        flagsBox.setLayout(flagsLayout)
-        bindings['__flags'] = self.make_flags_on(flagsBox, flags)
-        group_box.layout().addWidget(flagsBox)
+        flags_box = QtWidgets.QGroupBox(group_box)
+        flags_layout = QtWidgets.QFormLayout()
+        flags_box.setLayout(flags_layout)
+        flags_box.setVisible(False)
+        bindings['__flags'] = self.make_flags_on(flags_box, flags)
+        group_box.layout().addWidget(flags_box)
         # Special label flags
         special_flags_box = QtWidgets.QGroupBox(group_box)
-        flagsLayout = QtWidgets.QFormLayout()
-        special_flags_box.setLayout(flagsLayout)
+        flags_layout = QtWidgets.QFormLayout()
+        special_flags_box.setLayout(flags_layout)
         group_box.layout().addWidget(special_flags_box)
+        special_flags_box.setVisible(False)
         # Add self to list
         self._boxes.append(group_box)
         # Adjust dialog size
@@ -167,8 +169,8 @@ class LabelDialog(QtWidgets.QDialog):
     def find_dicts(self, box):
         def walk_dict(d):
             current = d
-            for box in self._boxes[:idx]:
-                label_list = LabelDialog.get_list_from_box(box)
+            for b in self._boxes[:idx]:
+                label_list = LabelDialog.get_list_from_box(b)
                 level_i_selected = LabelDialog.get_label_list_selected(label_list)
                 current = current[level_i_selected]
             return current
@@ -258,8 +260,8 @@ class LabelDialog(QtWidgets.QDialog):
                 item = QtWidgets.QCheckBox(v, widget)
                 layout.addRow(item)
                 bindings[v] = (
-                    lambda item=item: item.isChecked(),
-                    lambda boolean, item=item: item.setChecked(boolean)
+                    lambda i=item: i.isChecked(),
+                    lambda boolean, i=item: i.setChecked(boolean)
                 )
                 item.show()
             elif spec == 'int':
@@ -267,8 +269,8 @@ class LabelDialog(QtWidgets.QDialog):
                 edit = QtWidgets.QLineEdit(widget)
                 layout.addRow(label, edit)
                 bindings[v] = (
-                    lambda edit=edit: edit.text(),
-                    lambda val, edit=edit: edit.setText(str(val))
+                    lambda e=edit: e.text(),
+                    lambda val, e=edit: e.setText(str(val))
                 )
                 label.show()
                 edit.show()
@@ -278,13 +280,15 @@ class LabelDialog(QtWidgets.QDialog):
                 combo.addItems(spec)
                 layout.addRow(label, combo)
                 bindings[v] = (
-                    lambda combo=combo: combo.currentText(),
-                    lambda val, combo=combo: combo.setCurrentText(val)
+                    lambda c=combo: c.currentText(),
+                    lambda val, c=combo: c.setCurrentText(val)
                 )
                 label.show()
                 combo.show()
             else:
                 assert False
+        if flags:
+            widget.setVisible(True)
         return bindings
 
     @staticmethod
@@ -326,11 +330,11 @@ class LabelDialog(QtWidgets.QDialog):
             QtWidgets.QMessageBox.warning(self, 'Error', 'Label form is not complete')
 
     def popUp(self, text_or_form=None, move=True):
-        def dummy_form(text):
+        def dummy_form(t):
             return {
                 '__flags': {},
-                '__label': text,
-                text: None
+                '__label': t,
+                t: None
             }
 
         edit0 = self.get_edit_from_box(self._boxes[0])
