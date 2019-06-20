@@ -352,6 +352,6 @@ class LabelDialog(QtWidgets.QDialog):
             self.move(QtGui.QCursor.pos())
         if self.exec_():
             assert self._form is not None
-            text = list(set(self._form.keys()) - {'__flags'})[0]
+            text = self._form['__label']
             return text, self._form
         return None, None
