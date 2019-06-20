@@ -867,8 +867,7 @@ class MainWindow(QtWidgets.QMainWindow):
                               "Invalid label '{}' with validation type '{}'"
                               .format(text, self._config['validate_label']))
             return
-        shape.label = text
-        shape.form = form
+        self.canvas.setLabelFor(shape, text, form)
         item.setText(text)
         self.setDirty()
         if not self.uniqLabelList.findItems(text, Qt.MatchExactly):
