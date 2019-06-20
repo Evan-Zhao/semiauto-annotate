@@ -70,6 +70,10 @@ class LabelDialog(QtWidgets.QDialog):
         bb.rejected.connect(self.reject)
         layout.addWidget(bb)
 
+    @property
+    def edit(self):
+        return self.get_edit_from_box(self._boxes[0])
+
     def make_group_box(self, labels, bindings):
         label_items = list(labels.keys())
         if '__flags' in labels:
@@ -313,7 +317,8 @@ class LabelDialog(QtWidgets.QDialog):
     def set_state_recursive(self, bindings, form):
         flags = form['__flags']
         for flag, (_, setter) in bindings['__flags'].items():
-            setter(flags[flag])
+            if flag in flags:
+                setter(flags[flag])
         label = form['__label']
         bindings['__label'][1](label)
         next_form = form[label]
@@ -338,14 +343,12 @@ class LabelDialog(QtWidgets.QDialog):
             }
 
         edit0 = self.get_edit_from_box(self._boxes[0])
-        if text_or_form is None or type(text_or_form) is str:
-            text = text_or_form if text_or_form else edit0.text()
+        if type(text_or_form) is str:
+            text = text_or_form
             self.set_state_recursive(self._bindings, dummy_form(text))
         elif type(text_or_form) is dict:
             form = text_or_form
             self.set_state_recursive(self._bindings, form)
-        else:
-            assert False
         edit0.setFocus(QtCore.Qt.PopupFocusReason)
 
         if move:
