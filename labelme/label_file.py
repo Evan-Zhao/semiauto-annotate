@@ -5,11 +5,11 @@ import os.path as osp
 
 import PIL.Image
 
-from labelme._version import __version__
-from labelme.logger import logger
 from labelme import PY2
 from labelme import QT4
 from labelme import utils
+from labelme._version import __version__
+from labelme.logger import logger
 
 
 class LabelFileError(Exception):
@@ -89,7 +89,7 @@ class LabelFile(object):
                     s['line_color'],
                     s['fill_color'],
                     s.get('shape_type', 'polygon'),
-                    s.get('flags', {}),
+                    s.get('form', {}),
                 )
                 for s in data['shapes']
             )

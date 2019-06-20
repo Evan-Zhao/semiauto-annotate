@@ -249,7 +249,8 @@ class Shape(object):
             fill_color=self.fill_color.getRgb()
             if self.fill_color != defFillColor else None,
             points=[(p.x(), p.y()) for p in self.points],
-            shape_type=self.shape_type
+            shape_type=self.shape_type,
+            form=self.form
         )
 
     def __len__(self):

@@ -859,7 +859,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = self.labelList.get_shape_from_item(item)
         if shape is None:
             return
-        text, form = self.labelDialog.popUp(shape.label, flags=shape.flags)
+        text, form = self.labelDialog.popUp(text_or_form=shape.form)
         if text is None:
             return
         if not self.validateLabel(text):
@@ -922,10 +922,7 @@ class MainWindow(QtWidgets.QMainWindow):
         item.setCheckState(Qt.Checked)
         self.labelList.itemsToShapes.append((item, shape))
         self.labelList.addItem(item)
-        if not self.uniqLabelList.findItems(shape.label, Qt.MatchExactly):
-            self.uniqLabelList.addItem(shape.label)
-            self.uniqLabelList.sortItems()
-        self.labelDialog.addLabelHistory(item.text())
+        # TODO: check that incoming label already exists, otherwise throw error
         for action in self.actions.onShapesPresent:
             action.setEnabled(True)
 
@@ -944,7 +941,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadLabels(self, shapes):
         s = []
-        for label, points, line_color, fill_color, shape_type, flags in shapes:
+        for label, points, line_color, fill_color, shape_type, form in shapes:
             shape = Shape(label=label, shape_type=shape_type)
             for x, y in points:
                 shape.addPoint(QtCore.QPointF(x, y))
@@ -956,14 +953,7 @@ class MainWindow(QtWidgets.QMainWindow):
             if fill_color:
                 shape.fill_color = QtGui.QColor(*fill_color)
 
-            default_flags = {}
-            if self._config['label_flags']:
-                for pattern, keys in self._config['label_flags'].items():
-                    if re.match(pattern, label):
-                        for key in keys:
-                            default_flags[key] = False
-            shape.flags = default_flags
-            shape.flags.update(flags)
+            shape.form = form
 
             s.append(shape)
         self.loadShapes(s)

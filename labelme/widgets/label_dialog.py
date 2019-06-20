@@ -37,8 +37,7 @@ class LabelDialog(QtWidgets.QDialog):
         self._labels = labels
         self._label_flags = {} if label_flags is None else label_flags
         self._boxes = []
-        self._collect_actions = {}
-        self.response = {}
+        self._bindings = {}
         if fit_to_content is None:
             fit_to_content = {'row': False, 'column': True}
         self._fit_to_content = fit_to_content
@@ -56,7 +55,7 @@ class LabelDialog(QtWidgets.QDialog):
         layout.addWidget(self.splitter)
         self.setLayout(layout)
         # Leftmost groupbox
-        topLevelGroupBox = self.make_group_box(labels, self._collect_actions)
+        topLevelGroupBox = self.make_group_box(labels, self._bindings)
         self.splitter.addWidget(topLevelGroupBox)
         # buttons
         bb = QtWidgets.QDialogButtonBox(
@@ -70,7 +69,7 @@ class LabelDialog(QtWidgets.QDialog):
         bb.rejected.connect(self.reject)
         layout.addWidget(bb)
 
-    def make_group_box(self, labels, collect_actions):
+    def make_group_box(self, labels, bindings):
         label_items = list(labels.keys())
         if '__flags' in labels:
             flags = labels['__flags']
@@ -99,8 +98,10 @@ class LabelDialog(QtWidgets.QDialog):
         label_list.currentItemChanged.connect(self.labelSelected)
         edit.setListWidget(label_list)
         verticalLayout.addWidget(label_list)
-        collect_actions['__label'] = \
-            lambda label_list=label_list: LabelDialog.get_label_list_selected(label_list)
+        bindings['__label'] = (
+            lambda l=label_list: LabelDialog.get_label_list_selected(l),
+            lambda val, l=label_list: self.set_label_list_selected(l, val)
+        )
         # completion
         completer = QtWidgets.QCompleter()
         if self.completion == 'startswith':
@@ -113,12 +114,12 @@ class LabelDialog(QtWidgets.QDialog):
         else:
             raise ValueError('Unsupported completion: {}'.format(self.completion))
         completer.setModel(label_list.model())
+        edit.setCompleter(completer)
         # Label flags
         flagsBox = QtWidgets.QGroupBox(group_box)
         flagsLayout = QtWidgets.QFormLayout()
         flagsBox.setLayout(flagsLayout)
-        actions = self.set_flags_on(flagsBox, flags)
-        collect_actions['__flags'] = actions
+        bindings['__flags'] = self.make_flags_on(flagsBox, flags)
         group_box.layout().addWidget(flagsBox)
         # self.edit.textChanged.connect(self.updateFlags)
         # Special label flags
@@ -173,13 +174,23 @@ class LabelDialog(QtWidgets.QDialog):
             return current
 
         idx = self._boxes.index(box)
-        return idx, walk_dict(self._labels), walk_dict(self._collect_actions)
+        return idx, walk_dict(self._labels), walk_dict(self._bindings)
 
     @staticmethod
     def get_label_list_selected(label_list):
         # Single selection boxes, only one can be selected
         selected = label_list.selectedItems()
         return selected[0].text() if selected else None
+
+    def set_label_list_selected(self, label_list, text):
+        items = label_list.findItems(text, QtCore.Qt.MatchFixedString)
+        edit = self.get_edit_from_box(label_list.parent())
+        if items:
+            if len(items) != 1:
+                logger.warning("Label list has duplicate '{}'".format(text))
+            label_list.setCurrentItem(items[0])
+            row = label_list.row(items[0])
+            edit.completer().setCurrentRow(row)
 
     @staticmethod
     def set_scroll_bar(component, fit_to_content):
@@ -191,14 +202,6 @@ class LabelDialog(QtWidgets.QDialog):
             component.setVerticalScrollBarPolicy(
                 QtCore.Qt.ScrollBarAlwaysOff
             )
-
-    def addLabelHistory(self, label):
-        return
-        if self.labelList.findItems(label, QtCore.Qt.MatchExactly):
-            return
-        self.labelList.addItem(label)
-        if self._sort_labels:
-            self.labelList.sortItems()
 
     def remove_last_label_effect(self, level, actions, text):
         def clear_layout(layout):
@@ -225,12 +228,12 @@ class LabelDialog(QtWidgets.QDialog):
         spec = labels[item.text()]
         if type(spec) is list:
             special_flags_box = self.get_special_flags_from_box(box)
-            flag_actions = self.set_flags_on(special_flags_box, spec)
+            flag_actions = self.make_flags_on(special_flags_box, spec)
             actions['__special_flags'] = flag_actions
         elif type(spec) is dict:
-            next_level_actions = {}
-            next_level = self.make_group_box(spec, next_level_actions)
-            self._collect_actions[item.text()] = next_level_actions
+            next_bindings = {}
+            next_level = self.make_group_box(spec, next_bindings)
+            self._bindings[item.text()] = next_bindings
             self.splitter.addWidget(next_level)
 
     def post_process(self):
@@ -242,21 +245,27 @@ class LabelDialog(QtWidgets.QDialog):
             text = text.trimmed()
         edit.setText(text)
 
-    def set_flags_on(self, widget, flags):
+    def make_flags_on(self, widget, flags):
         layout = widget.layout()
-        actions = {}
+        bindings = {}
         for v in flags:
             spec = self._label_flags[v]
             if spec == 'bool':
                 item = QtWidgets.QCheckBox(v, widget)
                 layout.addRow(item)
-                actions[v] = lambda item=item: item.isChecked()
+                bindings[v] = (
+                    lambda item=item: item.isChecked(),
+                    lambda boolean, item=item: item.setChecked(boolean)
+                )
                 item.show()
             elif spec == 'int':
                 label = QtWidgets.QLabel(v, widget)
                 edit = QtWidgets.QLineEdit(widget)
                 layout.addRow(label, edit)
-                actions[v] = lambda edit=edit: edit.text()
+                bindings[v] = (
+                    lambda edit=edit: edit.text(),
+                    lambda val, edit=edit: edit.setText(str(val))
+                )
                 label.show()
                 edit.show()
             elif type(spec) == list:
@@ -264,30 +273,44 @@ class LabelDialog(QtWidgets.QDialog):
                 combo = QtWidgets.QComboBox(widget)
                 combo.addItems(spec)
                 layout.addRow(label, combo)
-                actions[v] = lambda combo=combo: combo.currentText()
+                bindings[v] = (
+                    lambda combo=combo: combo.currentText(),
+                    lambda val, combo=combo: combo.setCurrentText(val)
+                )
                 label.show()
                 combo.show()
             else:
                 assert False
-        return actions
+        return bindings
 
     @staticmethod
-    def collect_state_recursive(action):
+    def collect_state_recursive(bindings):
         response = {}
-        if '__flags' in action:
+        if '__flags' in bindings:
             response['__flags'] = {}
-            for flag, act in action['__flags'].items():
-                response['__flags'][flag] = act()
-        label = action['__label']()
-        next_action = action.get(label, None)
+            for flag, (getter, _) in bindings['__flags'].items():
+                response['__flags'][flag] = getter()
+        label = bindings['__label'][0]()
+        next_getter = bindings.get(label, None)
         response['__label'] = label
-        response[label] = None if next_action is None else LabelDialog.collect_state_recursive(next_action)
+        response[label] = None if next_getter is None else LabelDialog.collect_state_recursive(next_getter)
         return response
 
     def collect_current_state(self):
-        return LabelDialog.collect_state_recursive(self._collect_actions)
+        return LabelDialog.collect_state_recursive(self._bindings)
 
-    def popUp(self, text=None, move=True, flags=None):
+    def set_state_recursive(self, bindings, form):
+        flags = form['__flags']
+        for flag, (_, setter) in bindings['__flags'].items():
+            setter(flags[flag])
+        label = form['__label']
+        bindings['__label'][1](label)
+        next_form = form[label]
+        next_bindings = bindings[label]
+        if next_form is not None:
+            self.set_state_recursive(next_bindings, next_form)
+
+    def popUp(self, text_or_form=None, move=True):
         def validate_result(self):
             return True
             # TODO
@@ -298,23 +321,24 @@ class LabelDialog(QtWidgets.QDialog):
             #     text = text.trimmed()
             # if text:
 
-        # if text is None, the previous label in self.edit is kept
-        # if text is None:
-        #     text = self.edit.text()
-        # if flags:
-        #     self.setFlags(flags)
-        # else:
-        #     self.resetFlags(text)
-        # self.edit.setText(text)
-        # self.edit.setSelection(0, len(text))
-        # items = self.labelList.findItems(text, QtCore.Qt.MatchFixedString)
-        # if items:
-        #     if len(items) != 1:
-        #         logger.warning("Label list has duplicate '{}'".format(text))
-        #     self.labelList.setCurrentItem(items[0])
-        #     row = self.labelList.row(items[0])
-        #     self.edit.completer().setCurrentRow(row)
-        # self.edit.setFocus(QtCore.Qt.PopupFocusReason)
+        def dummy_form(text):
+            return {
+                '__flags': {},
+                '__label': text,
+                text: None
+            }
+
+        edit0 = self.get_edit_from_box(self._boxes[0])
+        if text_or_form is None or type(text_or_form) is str:
+            text = text_or_form if text_or_form else edit0.text()
+            self.set_state_recursive(self._bindings, dummy_form(text))
+        elif type(text_or_form) is dict:
+            form = text_or_form
+            self.set_state_recursive(self._bindings, form)
+        else:
+            assert False
+        edit0.setFocus(QtCore.Qt.PopupFocusReason)
+
         if move:
             self.move(QtGui.QCursor.pos())
         if self.exec_():
