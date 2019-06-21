@@ -392,7 +392,12 @@ class MainWindow(QtWidgets.QMainWindow):
         edit = action('&Edit Label', self.editLabel, shortcuts['edit_label'],
                       'edit', 'Modify the label of the selected polygon',
                       enabled=False)
-
+        invertSelection = action('&Invert Selection', self.labelList.invertSelection,
+                                 shortcuts['invert_selection'],
+                                 'invert_selection', 'Invert selection of polygon labels',
+                                 enabled=True)
+        selectAll = action('Select All', self.labelList.select_and_check_all, shortcuts['select_all'],
+                           'select_all', 'Select all polygon labels', enabled=True)
         shapeLineColor = action(
             'Shape &Line Color', self.chshapeLineColor, icon='color-line',
             tip='Change the line color for this specific shape', enabled=False)
@@ -412,7 +417,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
-        utils.addActions(labelMenu, (edit, delete))
+        utils.addActions(labelMenu, (edit, delete, invertSelection, selectAll))
         self.labelList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.labelList.customContextMenuRequested.connect(
             self.popLabelListMenu)
@@ -427,16 +432,19 @@ class MainWindow(QtWidgets.QMainWindow):
             createCurveMode,
             createFreeformMode,
         )
+
+        from types import SimpleNamespace
         # Store actions for further handling.
-        self.actions = utils.struct(
+        self.actions = SimpleNamespace(
             saveAuto=saveAuto,
             changeOutputDir=changeOutputDir,
             save=save, saveAs=saveAs, open=open_, close=close,
             deleteFile=deleteFile,
             lineColor=color1, fillColor=color2,
             toggleKeepPrevMode=toggle_keep_prev_mode,
-            delete=delete, edit=edit, copy=copy,
-            undoLastPoint=undoLastPoint, undo=undo,
+            delete=delete, edit=edit,
+            invertSelection=invertSelection, selectAll=selectAll,
+            copy=copy, undoLastPoint=undoLastPoint, undo=undo,
             addPoint=addPoint,
             createMode=createMode, editMode=editMode,
             createRectangleMode=createRectangleMode,
@@ -453,7 +461,8 @@ class MainWindow(QtWidgets.QMainWindow):
             openNextImg=openNextImg, openPrevImg=openPrevImg,
             fileMenuActions=(open_, opendir, save, saveAs, close, quit),
             tool=(),
-            editMenu=(edit, copy, delete, None, undo, undoLastPoint,
+            # Add actions here to take effect
+            editMenu=(edit, copy, delete, None, undo, undoLastPoint, selectAll, invertSelection,
                       None, color1, color2, None, toggle_keep_prev_mode),
             allCreateModes=allCreateModes,
             # menu shown at right click
@@ -479,7 +488,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.canvas.edgeSelected.connect(self.actions.addPoint.setEnabled)
 
-        self.menus = utils.struct(
+        self.menus = SimpleNamespace(
             file=self.menu('&File'),
             edit=self.menu('&Edit'),
             view=self.menu('&View'),

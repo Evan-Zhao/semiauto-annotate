@@ -134,6 +134,8 @@ shortcuts:
   create_curve: null
   create_freeform: null
   edit_polygon: Ctrl+J
+  invert_selection: Ctrl+I
+  select_all: Ctrl+A
   delete_polygon: Delete
   duplicate_polygon: Ctrl+D
   undo: Ctrl+Z
