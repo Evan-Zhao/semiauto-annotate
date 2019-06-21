@@ -40,16 +40,15 @@ from . import utils
 
 
 class MainWindow(QtWidgets.QMainWindow):
-
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = 0, 1, 2
 
     def __init__(
-        self,
-        config=None,
-        filename=None,
-        output=None,
-        output_file=None,
-        output_dir=None,
+            self,
+            config=None,
+            filename=None,
+            output=None,
+            output_file=None,
+            output_dir=None,
     ):
         if output is not None:
             logger.warning(
@@ -299,6 +298,20 @@ class MainWindow(QtWidgets.QMainWindow):
             'Start drawing linestrip. Ctrl+LeftClick ends creation.',
             enabled=False,
         )
+        createCurveMode = action(
+            'Create Curve',
+            lambda: self.toggleDrawMode(False, createMode='curve'),
+            shortcuts['create_curve'],
+            'objects',
+            'Start drawing curve (Bezier).',
+            enabled=False, )
+        createFreeformMode = action(
+            'Create Freeform (Lines and Curves)',
+            lambda: self.toggleDrawMode(False, createMode='freeform'),
+            shortcuts['create_freeform'],
+            'objects',
+            'Start drawing freeform (Lines and Curves).',
+            enabled=False, )
         editMode = action('Edit Polygons', self.setEditMode,
                           shortcuts['edit_polygon'], 'edit',
                           'Move and edit the selected polygons', enabled=False)
@@ -335,7 +348,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zoomWidget.setWhatsThis(
             'Zoom in or out of the image. Also accessible with '
             '{} and {} from the canvas.'
-            .format(
+                .format(
                 utils.fmtShortcut(
                     '{},{}'.format(
                         shortcuts['zoom_in'], shortcuts['zoom_out']
@@ -404,6 +417,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList.customContextMenuRequested.connect(
             self.popLabelListMenu)
 
+        allCreateModes = (
+            createMode,
+            createRectangleMode,
+            createCircleMode,
+            createLineMode,
+            createPointMode,
+            createLineStripMode,
+            createCurveMode,
+            createFreeformMode,
+        )
         # Store actions for further handling.
         self.actions = utils.struct(
             saveAuto=saveAuto,
@@ -421,6 +444,8 @@ class MainWindow(QtWidgets.QMainWindow):
             createLineMode=createLineMode,
             createPointMode=createPointMode,
             createLineStripMode=createLineStripMode,
+            createCurveMode=createCurveMode,
+            createFreeformMode=createFreeformMode,
             shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
             zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
             fitWindow=fitWindow, fitWidth=fitWidth,
@@ -430,14 +455,10 @@ class MainWindow(QtWidgets.QMainWindow):
             tool=(),
             editMenu=(edit, copy, delete, None, undo, undoLastPoint,
                       None, color1, color2, None, toggle_keep_prev_mode),
+            allCreateModes=allCreateModes,
             # menu shown at right click
             menu=(
-                createMode,
-                createRectangleMode,
-                createCircleMode,
-                createLineMode,
-                createPointMode,
-                createLineStripMode,
+                *allCreateModes,
                 editMode,
                 edit,
                 copy,
@@ -450,12 +471,7 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
             onLoadActive=(
                 close,
-                createMode,
-                createRectangleMode,
-                createCircleMode,
-                createLineMode,
-                createPointMode,
-                createLineStripMode,
+                *allCreateModes,
                 editMode,
             ),
             onShapesPresent=(saveAs, hideAll, showAll),
@@ -754,59 +770,25 @@ class MainWindow(QtWidgets.QMainWindow):
     def toggleDrawMode(self, edit=True, createMode='polygon'):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
-        if edit:
-            self.actions.createMode.setEnabled(True)
-            self.actions.createRectangleMode.setEnabled(True)
-            self.actions.createCircleMode.setEnabled(True)
-            self.actions.createLineMode.setEnabled(True)
-            self.actions.createPointMode.setEnabled(True)
-            self.actions.createLineStripMode.setEnabled(True)
-        else:
-            if createMode == 'polygon':
-                self.actions.createMode.setEnabled(False)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == 'rectangle':
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(False)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == 'line':
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(False)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == 'point':
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(False)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "circle":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(False)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(True)
-            elif createMode == "linestrip":
-                self.actions.createMode.setEnabled(True)
-                self.actions.createRectangleMode.setEnabled(True)
-                self.actions.createCircleMode.setEnabled(True)
-                self.actions.createLineMode.setEnabled(True)
-                self.actions.createPointMode.setEnabled(True)
-                self.actions.createLineStripMode.setEnabled(False)
-            else:
-                raise ValueError('Unsupported createMode: %s' % createMode)
         self.actions.editMode.setEnabled(not edit)
+        if edit:
+            for action in self.actions.allCreateModes:
+                action.setEnabled(True)
+            return
+        modesMapping = {
+            'polygon': self.actions.createMode,
+            'rectangle': self.actions.createRectangleMode,
+            'line': self.actions.createLineMode,
+            'point': self.actions.createPointMode,
+            'circle': self.actions.createCircleMode,
+            'linestrip': self.actions.createLineStripMode,
+            'curve': self.actions.createCurveMode,
+            'freeform': self.actions.createFreeformMode
+        }
+        if createMode not in modesMapping:
+            raise ValueError('Unsupported createMode: %s' % createMode)
+        for action in self.actions.allCreateModes:
+            action.setEnabled(action != modesMapping[createMode])
 
     def setEditMode(self):
         self.toggleDrawMode(True)
@@ -1192,7 +1174,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 'Error opening file',
                 '<p>Make sure <i>{0}</i> is a valid image file.<br/>'
                 'Supported image formats: {1}</p>'
-                .format(filename, ','.join(formats)))
+                    .format(filename, ','.join(formats)))
             self.status("Error reading %s" % filename)
             return False
         self.image = image
@@ -1218,8 +1200,8 @@ class MainWindow(QtWidgets.QMainWindow):
         return True
 
     def resizeEvent(self, event):
-        if self.canvas and not self.image.isNull()\
-           and self.zoomMode != self.MANUAL_ZOOM:
+        if self.canvas and not self.image.isNull() \
+                and self.zoomMode != self.MANUAL_ZOOM:
             self.adjustScale()
         super(MainWindow, self).resizeEvent(event)
 
@@ -1348,8 +1330,8 @@ class MainWindow(QtWidgets.QMainWindow):
         output_dir = QtWidgets.QFileDialog.getExistingDirectory(
             self, '%s - Save/Load Annotations in Directory' % __appname__,
             default_output_dir,
-            QtWidgets.QFileDialog.ShowDirsOnly |
-            QtWidgets.QFileDialog.DontResolveSymlinks,
+                  QtWidgets.QFileDialog.ShowDirsOnly |
+                  QtWidgets.QFileDialog.DontResolveSymlinks,
         )
         output_dir = str(output_dir)
 
@@ -1578,8 +1560,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         targetDirPath = str(QtWidgets.QFileDialog.getExistingDirectory(
             self, '%s - Open Directory' % __appname__, defaultOpenDirPath,
-            QtWidgets.QFileDialog.ShowDirsOnly |
-            QtWidgets.QFileDialog.DontResolveSymlinks))
+                  QtWidgets.QFileDialog.ShowDirsOnly |
+                  QtWidgets.QFileDialog.DontResolveSymlinks))
         self.importDirImages(targetDirPath)
 
     @property

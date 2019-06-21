@@ -87,7 +87,7 @@ class Canvas(QtWidgets.QWidget):
     @createMode.setter
     def createMode(self, value):
         if value not in ['polygon', 'rectangle', 'circle',
-                         'line', 'point', 'linestrip']:
+                         'line', 'point', 'linestrip', 'curve', 'freeform']:
             raise ValueError('Unsupported createMode: %s' % value)
         self._createMode = value
 
@@ -174,6 +174,8 @@ class Canvas(QtWidgets.QWidget):
             if self.createMode in ['polygon', 'linestrip']:
                 self.line[0] = self.current[-1]
                 self.line[1] = pos
+            elif self.createMode == 'curve':
+                self.current[-1] = pos
             elif self.createMode == 'rectangle':
                 self.line.points = [self.current[0], pos]
                 self.line.close()
@@ -317,12 +319,23 @@ class Canvas(QtWidgets.QWidget):
                         self.line[0] = self.current[-1]
                         if int(ev.modifiers()) == QtCore.Qt.ControlModifier:
                             self.finalise()
+                    elif self.createMode == 'curve':
+                        self.current.addPoint(self.current[-1])
+                        if int(ev.modifiers()) == QtCore.Qt.ControlModifier:
+                            self.finalise()
                 elif not self.outOfPixmap(pos):
                     # Create new shape.
                     self.current = Shape(shape_type=self.createMode)
                     self.current.addPoint(pos)
                     if self.createMode == 'point':
                         self.finalise()
+                    elif self.createMode == 'curve':
+                        # Add two points to current shape: starting point and current cursor
+                        # addPoint checks for shape closeness, so we use insertPoint
+                        self.current.insertPoint(0, pos)
+                        self.setHiding()
+                        self.drawingPolygon.emit(True)
+                        self.update()
                     else:
                         if self.createMode == 'circle':
                             self.current.shape_type = 'circle'
