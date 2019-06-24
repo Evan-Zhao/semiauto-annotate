@@ -27,3 +27,9 @@ MANIFEST
 __pycache__/
 *.py[cod]
 *$py.class
+
+# C++ Qt Build
+build-labelme-*/
+
+# Qt Creator
+*.pro.*

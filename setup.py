@@ -35,6 +35,7 @@ install_requires = [
     'PyYAML',
     'qtpy',
     'termcolor',
+    'astor',
 ]
 
 # Find python binding for qt with priority:
