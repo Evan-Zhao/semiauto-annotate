@@ -50,6 +50,420 @@
           "crossing": null
         }
       }
+    },
+    {
+      "label": "lane",
+      "line_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "fill_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "points": [
+        [
+          80.02050816025894,
+          412.211006571407
+        ],
+        [
+          114.72050816025893,
+          413.01100657140705
+        ],
+        [
+          2.0205081602589416,
+          454.811006571407
+        ],
+        [
+          0.0,
+          439.39069027988324
+        ]
+      ],
+      "shape_type": "polygon",
+      "form": {
+        "__flags": {
+          "occluded": false,
+          "truncated": true
+        },
+        "__label": "lane",
+        "lane": {
+          "__flags": {
+            "directions": "vertical",
+            "line": "solid"
+          },
+          "__label": "crossing",
+          "crossing": null
+        }
+      }
+    },
+    {
+      "label": "lane",
+      "line_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "fill_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "points": [
+        [
+          184.3205081602589,
+          414.311006571407
+        ],
+        [
+          220.1205081602589,
+          415.111006571407
+        ],
+        [
+          1.0205081602589416,
+          531.211006571407
+        ],
+        [
+          0.09999999999999432,
+          498.2906902798832
+        ]
+      ],
+      "shape_type": "polygon",
+      "form": {
+        "__flags": {
+          "occluded": false,
+          "truncated": true
+        },
+        "__label": "lane",
+        "lane": {
+          "__flags": {
+            "directions": "vertical",
+            "line": "solid"
+          },
+          "__label": "crossing",
+          "crossing": null
+        }
+      }
+    },
+    {
+      "label": "lane",
+      "line_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "fill_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "points": [
+        [
+          37.823897990767364,
+          599.8127014866614
+        ],
+        [
+          117.12389799076738,
+          541.3127014866614
+        ],
+        [
+          117.12389799076738,
+          580.6127014866613
+        ],
+        [
+          140.82389799076736,
+          582.6127014866613
+        ],
+        [
+          143.42389799076733,
+          586.8127014866614
+        ],
+        [
+          128.8664905409778,
+          600.0
+        ]
+      ],
+      "shape_type": "polygon",
+      "form": {
+        "__flags": {
+          "occluded": true,
+          "truncated": true
+        },
+        "__label": "lane",
+        "lane": {
+          "__flags": {
+            "directions": "vertical",
+            "line": "solid"
+          },
+          "__label": "crossing",
+          "crossing": null
+        }
+      }
+    },
+    {
+      "label": "lane",
+      "line_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "fill_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "points": [
+        [
+          369.2740593311075,
+          476.92783926153317
+        ],
+        [
+          405.3229391681747,
+          419.39219771367164
+        ],
+        [
+          449.00929354699343,
+          421.5306905853621
+        ],
+        [
+          388.4716925694146,
+          600.0
+        ],
+        [
+          347.5836316325331,
+          599.8402628867877
+        ],
+        [
+          348.9074605531034,
+          594.6467801983968
+        ],
+        [
+          389.9461570907816,
+          526.7241732737532
+        ],
+        [
+          390.5571550541217,
+          479.06633213322357
+        ]
+      ],
+      "shape_type": "polygon",
+      "form": {
+        "__flags": {
+          "occluded": true,
+          "truncated": true
+        },
+        "__label": "lane",
+        "lane": {
+          "__flags": {
+            "directions": "vertical",
+            "line": "solid"
+          },
+          "__label": "crossing",
+          "crossing": null
+        }
+      }
+    },
+    {
+      "label": "lane",
+      "line_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "fill_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "points": [
+        [
+          639.6406581091117,
+          431.3066579988041
+        ],
+        [
+          791.6766683148572,
+          600.0
+        ],
+        [
+          800.0,
+          600.0
+        ],
+        [
+          800.0,
+          536.2964746994151
+        ],
+        [
+          682.3086825490302,
+          433.5469838643845
+        ]
+      ],
+      "shape_type": "polygon",
+      "form": {
+        "__flags": {
+          "occluded": false,
+          "truncated": true
+        },
+        "__label": "lane",
+        "lane": {
+          "__flags": {
+            "directions": "vertical",
+            "line": "solid"
+          },
+          "__label": "crossing",
+          "crossing": null
+        }
+      }
+    },
+    {
+      "label": "lane",
+      "line_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "fill_color": [
+        83,
+        55,
+        122,
+        128
+      ],
+      "points": [
+        [
+          760.9237538321258,
+          437.72213661387536
+        ],
+        [
+          800.0,
+          464.30597671785114
+        ],
+        [
+          800.0,
+          439.65696349778574
+        ]
+      ],
+      "shape_type": "polygon",
+      "form": {
+        "__flags": {
+          "occluded": false,
+          "truncated": true
+        },
+        "__label": "lane",
+        "lane": {
+          "__flags": {
+            "directions": "vertical",
+            "line": "solid"
+          },
+          "__label": "crossing",
+          "crossing": null
+        }
+      }
+    },
+    {
+      "label": "driveway(可行驶区域)",
+      "line_color": [
+        255,
+        122,
+        92,
+        128
+      ],
+      "fill_color": [
+        255,
+        122,
+        92,
+        128
+      ],
+      "points": [
+        [
+          493.59807446981426,
+          277.6131431821693
+        ],
+        [
+          303.14096818351675,
+          600.0
+        ],
+        [
+          800.0,
+          600.0
+        ],
+        [
+          798.7706912872419,
+          473.1751514249569
+        ],
+        [
+          513.7388441534838,
+          277.95222148865116
+        ]
+      ],
+      "shape_type": "polygon",
+      "form": {
+        "__flags": {
+          "occluded": false,
+          "truncated": true
+        },
+        "__label": "driveway(可行驶区域)",
+        "driveway(可行驶区域)": {
+          "__flags": {},
+          "__label": "current",
+          "current": null
+        }
+      }
+    },
+    {
+      "label": "driveway(可行驶区域)",
+      "line_color": [
+        255,
+        122,
+        92,
+        128
+      ],
+      "fill_color": [
+        255,
+        122,
+        92,
+        128
+      ],
+      "points": [
+        [
+          799.7261052999808,
+          447.06050174342823
+        ],
+        [
+          530.5375702681335,
+          277.6719667115811
+        ],
+        [
+          547.0375702681335,
+          277.5719667115811
+        ],
+        [
+          800.0,
+          363.2064269721734
+        ]
+      ],
+      "shape_type": "polygon",
+      "form": {
+        "__flags": {
+          "occluded": false,
+          "truncated": true
+        },
+        "__label": "driveway(可行驶区域)",
+        "driveway(可行驶区域)": {
+          "__flags": {},
+          "__label": "alternative",
+          "alternative": null
+        }
+      }
     }
   ],
   "lineColor": [
