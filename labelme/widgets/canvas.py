@@ -18,7 +18,7 @@ CURSOR_GRAB = QtCore.Qt.OpenHandCursor
 
 
 class Canvas(QtWidgets.QWidget):
-    zoomRequest = QtCore.Signal(int, QtCore.QPoint)
+    zoomRequest = QtCore.Signal(int, QtCore.QPointF)
     scrollRequest = QtCore.Signal(int, int)
     newShape = QtCore.Signal()
     selectionChanged = QtCore.Signal(list)
@@ -51,10 +51,10 @@ class Canvas(QtWidgets.QWidget):
         #   - createMode == 'line': the line
         #   - createMode == 'point': the point
         self.line = Shape(line_color=self.lineColor)
-        self.prevPoint = QtCore.QPoint()
-        self.prevMovePoint = QtCore.QPoint()
-        self.offsets = QtCore.QPoint(), QtCore.QPoint()
-        self.imagePos = QtCore.QPoint()
+        self.prevPoint = QtCore.QPointF()
+        self.prevMovePoint = QtCore.QPointF()
+        self.offsets = QtCore.QPointF(), QtCore.QPointF()
+        self.imagePos = QtCore.QPointF()
         self.scale = 1.0
         self.pixmap = QtGui.QPixmap()
         self.visible = {}
@@ -125,7 +125,7 @@ class Canvas(QtWidgets.QWidget):
     def focusOutEvent(self, ev):
         self.restoreCursor()
 
-    def isVisible(self, shape):
+    def isCanvasVisible(self, shape):
         return self.visible.get(shape, True)
 
     def drawing(self):
@@ -193,7 +193,7 @@ class Canvas(QtWidgets.QWidget):
             self.current.highlightClear()
 
         def findHighlight(pos):
-            for shape in reversed([s for s in self.shapes if self.isVisible(s)]):
+            for shape in reversed([s for s in self.shapes if self.isCanvasVisible(s)]):
                 # Look for a nearby vertex to highlight. If that fails,
                 # check if we happen to be inside a shape.
                 index = shape.nearestVertex(pos, self.epsilon / self.scale)
@@ -420,8 +420,8 @@ class Canvas(QtWidgets.QWidget):
             shape.highlightVertex(index, shape.MOVE_VERTEX)
         else:
             for shape in reversed(self.shapes):
-                if self.isVisible(shape) and shape.containsPoint(point):
-                    self.calculateOffsets(shape, point)
+                if self.isCanvasVisible(shape) and shape.containsPoint(point):
+                    self.calculateOffsets(shape, point, margin=0.1)
                     self.setHiding()
                     if multiple_selection_mode:
                         if shape not in self.selectedShapes:
@@ -432,19 +432,21 @@ class Canvas(QtWidgets.QWidget):
                     return
         self.deSelectShape()
 
-    def calculateOffsets(self, shape, point):
+    def calculateOffsets(self, shape, point, margin=0.0):
         rect = shape.boundingRect()
-        x1 = rect.x() - point.x()
-        y1 = rect.y() - point.y()
-        x2 = (rect.x() + rect.width() - 1) - point.x()
-        y2 = (rect.y() + rect.height() - 1) - point.y()
-        self.offsets = QtCore.QPoint(x1, y1), QtCore.QPoint(x2, y2)
+        x1 = rect.x() - point.x() - margin
+        y1 = rect.y() - point.y() - margin
+        x2 = rect.x() + rect.width() + margin - point.x()
+        y2 = rect.y() + rect.height() + margin - point.y()
+        self.offsets = QtCore.QPointF(x1, y1), QtCore.QPointF(x2, y2)
 
     def boundedMoveVertex(self, pos):
         index, shape = self.hVertex, self.hShape
         point = shape[index]
         if self.outOfPixmap(pos):
+            assert not self.outOfPixmap(point)
             pos = self.intersectionPoint(point, pos)
+        assert not self.outOfPixmap(pos)
         shape.moveVertexBy(index, pos - point)
 
     def boundedMoveShapes(self, shapes, pos):
@@ -452,11 +454,11 @@ class Canvas(QtWidgets.QWidget):
             return False  # No need to move
         o1 = pos + self.offsets[0]
         if self.outOfPixmap(o1):
-            pos -= QtCore.QPoint(min(0, o1.x()), min(0, o1.y()))
+            pos -= QtCore.QPointF(min(0.0, o1.x()), min(0.0, o1.y()))
         o2 = pos + self.offsets[1]
         if self.outOfPixmap(o2):
-            pos += QtCore.QPoint(min(0, self.pixmap.width() - o2.x()),
-                                 min(0, self.pixmap.height() - o2.y()))
+            pos += QtCore.QPointF(min(0.0, self.pixmap.width() - o2.x()),
+                                  min(0.0, self.pixmap.height() - o2.y()))
         # XXX: The next line tracks the new position of the cursor
         # relative to the shape, but also results in making it
         # a bit "shaky" when nearing the border and allows it to
@@ -498,8 +500,8 @@ class Canvas(QtWidgets.QWidget):
         # Try to move in one direction, and if it fails in another.
         # Give up if both fail.
         point = shapes[0][0]
-        offset = QtCore.QPoint(2.0, 2.0)
-        self.offsets = QtCore.QPoint(), QtCore.QPoint()
+        offset = QtCore.QPointF(2.0, 2.0)
+        self.offsets = QtCore.QPointF(), QtCore.QPointF()
         self.prevPoint = point
         if not self.boundedMoveShapes(shapes, point - offset):
             self.boundedMoveShapes(shapes, point + offset)
@@ -523,7 +525,7 @@ class Canvas(QtWidgets.QWidget):
         Shape.scale = self.scale
         for shape in self.shapes:
             if (shape.selected or not self._hideBackround) and \
-                    self.isVisible(shape):
+                    self.isCanvasVisible(shape):
                 shape.fill = shape.selected or shape == self.hShape
                 shape.paint(p)
         if self.current:
@@ -554,11 +556,11 @@ class Canvas(QtWidgets.QWidget):
         aw, ah = area.width(), area.height()
         x = (aw - w) / (2 * s) if aw > w else 0
         y = (ah - h) / (2 * s) if ah > h else 0
-        return QtCore.QPoint(x, y)
+        return QtCore.QPointF(x, y)
 
     def outOfPixmap(self, p):
         w, h = self.pixmap.width(), self.pixmap.height()
-        return not (0 <= p.x() < w and 0 <= p.y() < h)
+        return not (0 <= p.x() <= w and 0 <= p.y() <= h)
 
     def finalise(self):
         assert self.current
@@ -583,9 +585,9 @@ class Canvas(QtWidgets.QWidget):
         # http://paulbourke.net/geometry/lineline2d/
         size = self.pixmap.size()
         points = [(0, 0),
-                  (size.width() - 1, 0),
-                  (size.width() - 1, size.height() - 1),
-                  (0, size.height() - 1)]
+                  (size.width(), 0),
+                  (size.width(), size.height()),
+                  (0, size.height())]
         x1, y1 = p1.x(), p1.y()
         x2, y2 = p2.x(), p2.y()
         d, i, (x, y) = min(self.intersectingEdges((x1, y1), (x2, y2), points))
@@ -594,10 +596,10 @@ class Canvas(QtWidgets.QWidget):
         if (x, y) == (x1, y1):
             # Handle cases where previous point is on one of the edges.
             if x3 == x4:
-                return QtCore.QPoint(x3, min(max(0, y2), max(y3, y4)))
+                return QtCore.QPointF(x3, min(max(0, y2), max(y3, y4)))
             else:  # y3 == y4
-                return QtCore.QPoint(min(max(0, x2), max(x3, x4)), y3)
-        return QtCore.QPoint(x, y)
+                return QtCore.QPointF(min(max(0, x2), max(x3, x4)), y3)
+        return QtCore.QPointF(x, y)
 
     def intersectingEdges(self, point1, point2, points):
         """Find intersecting edges.
@@ -624,8 +626,8 @@ class Canvas(QtWidgets.QWidget):
             if 0 <= ua <= 1 and 0 <= ub <= 1:
                 x = x1 + ua * (x2 - x1)
                 y = y1 + ua * (y2 - y1)
-                m = QtCore.QPoint((x3 + x4) / 2, (y3 + y4) / 2)
-                d = labelme.utils.distance(m - QtCore.QPoint(x2, y2))
+                m = QtCore.QPointF((x3 + x4) / 2, (y3 + y4) / 2)
+                d = labelme.utils.distance(m - QtCore.QPointF(x2, y2))
                 yield d, i, (x, y)
 
     # These two, along with a call to adjustSize are required for the
