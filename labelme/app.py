@@ -932,10 +932,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def loadLabels(self, shapes):
         s = []
         for label, points, line_color, fill_color, shape_type, form in shapes:
-            shape = Shape(label=label, shape_type=shape_type)
-            for x, y in points:
-                shape.addPoint(QtCore.QPointF(x, y))
-            shape.close()
+            shape = Shape.from_list(
+                [QtCore.QPointF(x, y) for x, y in points],
+                label=label, shape_type=shape_type
+            )
 
             if line_color:
                 shape.line_color = QtGui.QColor(*line_color)
@@ -959,7 +959,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def saveLabels(self, filename):
         lf = LabelFile()
         shapes = [
-            shape.toJson(defFillColor=self.fillColor, defLineColor=self.lineColor)
+            shape.toJson(def_fill_color=self.fillColor, def_line_color=self.lineColor)
             for shape in self.labelList.shapes
         ]
         flags = {}
