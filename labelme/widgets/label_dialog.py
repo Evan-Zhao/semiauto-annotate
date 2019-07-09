@@ -6,6 +6,7 @@ from qtpy import QtWidgets
 QT5 = QT_VERSION[0] == '5'  # NOQA
 
 from labelme.logger import logger
+from labelme.custom_widgets.join_shapes_dialog import JoinShapesDialog
 import labelme.utils
 
 
@@ -14,7 +15,6 @@ import labelme.utils
 
 
 class LabelQLineEdit(QtWidgets.QLineEdit):
-
     def setListWidget(self, list_widget):
         self.list_widget = list_widget
 
@@ -23,6 +23,42 @@ class LabelQLineEdit(QtWidgets.QLineEdit):
             self.list_widget.keyPressEvent(e)
         else:
             super(LabelQLineEdit, self).keyPressEvent(e)
+
+
+class DialogContinuation(object):
+    """"""
+
+    def __init__(self, parent_dialog):
+        self.parent_dialog = parent_dialog
+        self.child_dialog = None
+
+    @staticmethod
+    def void(arg):
+        pass
+
+    def exec_(self, ret_processor1=None, ret_processor2=None):
+        v = DialogContinuation.void
+        if ret_processor1 is None:
+            ret_processor1 = v
+        if ret_processor2 is None:
+            ret_processor2 = v
+        parent_ret1 = self.parent_dialog.exec_()
+        ret_processor1(parent_ret1)
+        if self.child_dialog:
+            child_ret = self.child_dialog.exec_()
+            ret_processor2(child_ret)
+            self.child_dialog = None
+            parent_ret2 = self.parent_dialog.exec_()
+            return parent_ret2
+        else:
+            return parent_ret1
+
+    def switch_to_child(self, child_dialog):
+        # Hide parent dialog. Call to exec_() will return
+        # Store child dialog and execute it in our exec_()
+        # to prevent it from returning
+        self.parent_dialog.hide()
+        self.child_dialog = child_dialog
 
 
 class LabelDialog(QtWidgets.QDialog):
@@ -56,8 +92,8 @@ class LabelDialog(QtWidgets.QDialog):
         layout.addWidget(self.splitter)
         self.setLayout(layout)
         # Leftmost groupbox
-        topLevelGroupBox = self.make_group_box(labels, self._bindings)
-        self.splitter.addWidget(topLevelGroupBox)
+        top_level_group_box = self.make_group_box(labels, self._bindings)
+        self.add_box(top_level_group_box)
         # buttons
         bb = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel,
@@ -69,6 +105,9 @@ class LabelDialog(QtWidgets.QDialog):
         bb.accepted.connect(self.validate)
         bb.rejected.connect(self.reject)
         layout.addWidget(bb)
+
+        self.join_dialog = None
+        self.dialog_continuation = DialogContinuation(self)
 
     @property
     def edit(self):
@@ -133,8 +172,6 @@ class LabelDialog(QtWidgets.QDialog):
         special_flags_box.setLayout(flags_layout)
         group_box.layout().addWidget(special_flags_box)
         special_flags_box.setVisible(False)
-        # Add self to list
-        self._boxes.append(group_box)
         # Adjust dialog size
         if self._fit_to_content['column']:
             total_width = sum(
@@ -224,6 +261,10 @@ class LabelDialog(QtWidgets.QDialog):
             box.deleteLater()
         self._boxes = self._boxes[:level + 1]
 
+    def add_box(self, box):
+        self.splitter.addWidget(box)
+        self._boxes.append(box)
+
     def labelSelected(self, item):
         label_list = item.listWidget()
         box = label_list.parent()
@@ -242,7 +283,30 @@ class LabelDialog(QtWidgets.QDialog):
             next_bindings = {}
             self._bindings[item.text()] = next_bindings
             next_level = self.make_group_box(spec, next_bindings)
-            self.splitter.addWidget(next_level)
+            self.add_box(next_level)
+        elif self._label_flags.get(spec, None) == 'canvas':
+            # Special case
+            group_box = QtWidgets.QGroupBox(self)
+            vertical_layout = QtWidgets.QVBoxLayout()
+            group_box.setLayout(vertical_layout)
+            join_button = QtWidgets.QPushButton(parent=group_box, text='Join more shapes')
+            join_button.clicked.connect(self.open_join_dialog)
+            key_points_button = QtWidgets.QPushButton(parent=group_box, text='Annotate key points')
+            key_points_button.clicked.connect(self.open_key_points_dialog)
+            vertical_layout.addWidget(join_button)
+            vertical_layout.addWidget(key_points_button)
+            self.add_box(group_box)
+
+    def open_join_dialog(self):
+        if not self.join_dialog:
+            self.join_dialog = JoinShapesDialog(parent=self)
+        self.dialog_continuation.switch_to_child(self.join_dialog)
+
+    def open_key_points_dialog(self):
+        # TODO: key points dialog
+        if not self.join_dialog:
+            self.join_dialog = JoinShapesDialog(parent=self)
+        self.dialog_continuation.switch_to_child(self.join_dialog)
 
     def post_process(self):
         edit = self.sender()
@@ -353,7 +417,7 @@ class LabelDialog(QtWidgets.QDialog):
 
         if move:
             self.move(QtGui.QCursor.pos())
-        if self.exec_():
+        if self.dialog_continuation.exec_():
             assert self._form is not None
             text = self._form['__label']
             return text, self._form

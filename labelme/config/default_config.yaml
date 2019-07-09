@@ -13,6 +13,7 @@ label_flags:
   directions: [horizontal, vertical]
   line: [dotted, solid]
   limit: int
+  points: canvas
 
 labels:
   __flags: [occluded, truncated]
@@ -23,7 +24,7 @@ labels:
   train: null
   truck: null
   rider: null
-  person: null
+  person: points
   traffic light:
     red: null
     yellow: null
