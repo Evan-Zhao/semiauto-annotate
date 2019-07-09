@@ -36,22 +36,17 @@ class DialogContinuation(object):
     def void(arg):
         pass
 
-    def exec_(self, ret_processor1=None, ret_processor2=None):
+    def exec_(self, child_ret_processor=None):
         v = DialogContinuation.void
-        if ret_processor1 is None:
-            ret_processor1 = v
-        if ret_processor2 is None:
-            ret_processor2 = v
-        parent_ret1 = self.parent_dialog.exec_()
-        ret_processor1(parent_ret1)
-        if self.child_dialog:
+        if child_ret_processor is None:
+            child_ret_processor = v
+        parent_ret = self.parent_dialog.exec_()
+        while self.child_dialog:
             child_ret = self.child_dialog.exec_()
-            ret_processor2(child_ret)
+            child_ret_processor(child_ret)
             self.child_dialog = None
-            parent_ret2 = self.parent_dialog.exec_()
-            return parent_ret2
-        else:
-            return parent_ret1
+            parent_ret = self.parent_dialog.exec_()
+        return parent_ret
 
     def switch_to_child(self, child_dialog):
         # Hide parent dialog. Call to exec_() will return
