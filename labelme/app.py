@@ -71,16 +71,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self._noSelectionSlot = False
 
         # Main widgets and related state.
-        self.labelDialog = LabelDialog(
-            parent=self,
-            labels=self._config['labels'],
-            label_flags=self._config['label_flags'],
-            sort_labels=self._config['sort_labels'],
-            show_text_field=self._config['show_label_text_field'],
-            completion=self._config['label_completion'],
-            fit_to_content=self._config['fit_to_content']
-        )
-
         self.labelList = LabelQListWidget()
         self.lastOpenDir = None
 
@@ -143,6 +133,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.canvas.zoomRequest.connect(self.zoomRequest)
 
+        self.labelDialog = LabelDialog(
+            parent=self.canvas,
+            labels=self._config['labels'],
+            label_flags=self._config['label_flags'],
+            sort_labels=self._config['sort_labels'],
+            show_text_field=self._config['show_label_text_field'],
+            completion=self._config['label_completion'],
+            fit_to_content=self._config['fit_to_content']
+        )
+
         scrollArea = QtWidgets.QScrollArea()
         scrollArea.setWidget(self.canvas)
         scrollArea.setWidgetResizable(True)
@@ -156,6 +156,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.shapeMoved.connect(self.setDirty)
         self.canvas.selectionChanged.connect(self.shapeSelectionChanged)
         self.canvas.drawingPolygon.connect(self.toggleDrawingSensitive)
+        self.canvas.mergeShape.connect(self.mergeShapes)
 
         self.setCentralWidget(scrollArea)
 
@@ -905,6 +906,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.actions.edit.setEnabled(n_selected == 1)
         self.actions.shapeLineColor.setEnabled(n_selected)
         self.actions.shapeFillColor.setEnabled(n_selected)
+
+    def mergeShapes(self, all_removed, added):
+        self.remLabels(all_removed)
+        self.addLabel(added)
+        self.setDirty()
 
     def addLabel(self, shape):
         item = QtWidgets.QListWidgetItem(shape.label)

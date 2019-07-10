@@ -57,7 +57,6 @@ class DialogContinuation(object):
 
 
 class LabelDialog(QtWidgets.QDialog):
-
     def __init__(self, text="Enter object label", parent=None, labels=None, label_flags=None,
                  sort_labels=True, show_text_field=True,
                  completion='startswith', fit_to_content=None):
@@ -293,15 +292,18 @@ class LabelDialog(QtWidgets.QDialog):
             self.add_box(group_box)
 
     def open_join_dialog(self):
-        if not self.join_dialog:
-            self.join_dialog = JoinShapesDialog(parent=self)
-        self.dialog_continuation.switch_to_child(self.join_dialog)
+        """
+        Opens join dialog on button push.
+
+        After join dialog closes, the control doesn't return to this dialog,
+        because # of shapes may have changed.
+        """
+        self.reject()
+        self.parent().join_shapes_dialog.exec_()
 
     def open_key_points_dialog(self):
         # TODO: key points dialog
-        if not self.join_dialog:
-            self.join_dialog = JoinShapesDialog(parent=self)
-        self.dialog_continuation.switch_to_child(self.join_dialog)
+        pass
 
     def post_process(self):
         edit = self.sender()

@@ -2,7 +2,6 @@ from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
 
-import labelme.utils
 from labelme import QT5
 from labelme.shape import Shape
 

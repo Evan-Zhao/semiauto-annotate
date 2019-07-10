@@ -56,16 +56,15 @@ class CustomLabelQList(QtWidgets.QListWidget):
         self._anti_signal_loop = False
 
     @classmethod
-    def merge_construct(cls, label_qlist, canvas, *args, **kwargs):
-        """Construct from a QLabelListWidget (labelme legacy) and a PreviewCanvas."""
+    def from_canvas(cls, canvas, *args, **kwargs):
+        """Construct from a Canvas (or PreviewCanvas)."""
         this = cls(canvas, *args, **kwargs)
-        for i in range(label_qlist.count()):
-            qlist_item = label_qlist.item(i)
-            cloned_item = qlist_item.clone()
-            this.addItem(cloned_item)
-            shape = label_qlist.get_shape_from_item(qlist_item)
-            this.items_to_shapes.append((cloned_item, shape))
-        this.deselect_and_uncheck_all()
+        for shape in canvas.shapes:
+            item = QtWidgets.QListWidgetItem(shape.label)
+            item.setFlags(item.flags() | QtCore.Qt.ItemIsUserCheckable)
+            item.setCheckState(QtCore.Qt.Unchecked)
+            this.addItem(item)
+            this.items_to_shapes.append((item, shape))
         return this
 
     def get_shape_from_item(self, item):

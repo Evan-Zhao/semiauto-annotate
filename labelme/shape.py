@@ -383,3 +383,33 @@ class Shape(object):
 
     def __setitem__(self, key, value):
         self._points[key] = value
+
+
+class MultiShape(Shape):
+    def __init__(self, shapes):
+        """
+        Initialize super class with all points of all shapes
+        to reuse some of the Shapes function, like nearestVertex
+        """
+        super().__init__()
+        all_points = [p for s in shapes for p in s]
+        self._points = all_points
+        self._shapes = shapes
+        self.label = shapes[0].label if shapes else None
+        self.line_color = shapes[0].line_color if shapes else None
+
+    def paint(self, painter):
+        for s in self._shapes:
+            s.paint(painter)
+        pen = QtGui.QPen(self.line_color)
+        # Wider line than shape itself
+        pen.setWidth(max(1, int(round(4.0 / self.scale))))
+        pen.setStyle(QtCore.Qt.DashLine)
+        painter.setPen(pen)
+        path = QtGui.QPainterPath()
+        for s1, s2 in zip(self._shapes, self._shapes[1:]):
+            path.moveTo(s1[0])
+            path.lineTo(s2[0])
+            path.moveTo(s1[-1])
+            path.lineTo(s2[-1])
+        painter.drawPath(path)

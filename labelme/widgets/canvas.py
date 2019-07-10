@@ -4,7 +4,8 @@ from qtpy import QtWidgets
 
 import labelme.utils
 from labelme import QT5
-from labelme.shape import Shape
+from labelme.shape import Shape, MultiShape
+from labelme.custom_widgets.join_shapes_dialog import JoinShapesDialog
 
 # TODO(unknown):
 # - [maybe] Find optimal epsilon value.
@@ -21,6 +22,7 @@ class Canvas(QtWidgets.QWidget):
     zoomRequest = QtCore.Signal(int, QtCore.QPointF)
     scrollRequest = QtCore.Signal(int, int)
     newShape = QtCore.Signal()
+    mergeShape = QtCore.Signal(list, Shape)
     selectionChanged = QtCore.Signal(list)
     shapeMoved = QtCore.Signal()
     drawingPolygon = QtCore.Signal(bool)
@@ -264,6 +266,20 @@ class Canvas(QtWidgets.QWidget):
         self.hShape = shape
         self.hVertex = index
         self.hEdge = None
+
+    @property
+    def join_shapes_dialog(self):
+        """Construct a dialog on request to reflect the latest status."""
+        join_dialog = JoinShapesDialog(parent_canvas=self)
+        join_dialog.shapes_joined.connect(self.join_shapes)
+        return join_dialog
+
+    def join_shapes(self, shapes):
+        self.shapes = list(set(self.shapes) - set(shapes))
+        new_shape = MultiShape(shapes)
+        self.shapes.append(new_shape)
+        self.mergeShape.emit(shapes, new_shape)
+        self.repaint()
 
     def mousePressEvent(self, ev):
         if QT5:
