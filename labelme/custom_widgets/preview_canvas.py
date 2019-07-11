@@ -152,8 +152,7 @@ class PreviewCanvas(QtWidgets.QWidget):
         p.translate(self.imagePos)
         Shape.scale = self.scale
         for shape in self.shapes:
-            shape.fill = shape in self.selected_shapes or shape == self.hShape
-            shape.paint(p)
+            shape.paint(p, fill=(shape in self.selected_shapes or shape == self.hShape))
         p.end()
 
     def transformPos(self, point):
