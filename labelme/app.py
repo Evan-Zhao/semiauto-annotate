@@ -739,9 +739,10 @@ class MainWindow(QtWidgets.QMainWindow):
     # Callbacks
 
     def undoShapeEdit(self):
-        self.canvas.restoreShape()
-        self.labelList.clear()
-        self.loadShapes(self.canvas.shapes)
+        if self.canvas.restoreShape():
+            self.setDirty()
+            self.labelList.clear()
+            self.loadShapes(self.canvas.shapes)
         self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
 
     def tutorial(self):
