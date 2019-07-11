@@ -11,216 +11,6 @@
       },
       "shapes": [
         {
-          "py/object": "labelme.shape.MultiShape",
-          "py/state": {
-            "fill_color": {
-              "py/reduce": [
-                {
-                  "py/function": "PyQt5.sip._unpickle_type"
-                },
-                {
-                  "py/tuple": [
-                    "PyQt5.QtGui",
-                    "QColor",
-                    {
-                      "py/tuple": [
-                        0,
-                        125,
-                        52,
-                        128
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            "form": null,
-            "label": "person",
-            "line_color": {
-              "py/id": 3
-            },
-            "sub_shapes": [
-              {
-                "py/object": "labelme.shape.Shape",
-                "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "form": {
-                    "__flags": {
-                      "occluded": false,
-                      "truncated": false
-                    },
-                    "__label": "person",
-                    "person": null
-                  },
-                  "label": "person",
-                  "line_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "points": [
-                    {
-                      "py/tuple": [
-                        337.7118644067797,
-                        155.08474576271186
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        325.0,
-                        186.4406779661017
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        318.22033898305085,
-                        213.135593220339
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        330.08474576271186,
-                        275.0
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        330.93220338983053,
-                        306.35593220338984
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        320.7627118644068,
-                        479.66101694915255
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        316.9491525423729,
-                        505.50847457627117
-                      ]
-                    }
-                  ],
-                  "shape_type": "linestrip"
-                }
-              },
-              {
-                "py/object": "labelme.shape.Shape",
-                "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "form": {
-                    "__flags": {
-                      "occluded": false,
-                      "truncated": false
-                    },
-                    "__label": "person",
-                    "person": null
-                  },
-                  "label": "person",
-                  "line_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "points": [
-                    {
-                      "py/tuple": [
-                        329.66101694915255,
-                        212.71186440677968
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        441.5254237288136,
-                        204.23728813559322
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        457.2033898305085,
-                        177.96610169491527
-                      ]
-                    }
-                  ],
-                  "shape_type": "linestrip"
-                }
-              },
-              {
-                "py/object": "labelme.shape.Shape",
-                "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "form": {
-                    "__flags": {
-                      "occluded": false,
-                      "truncated": false
-                    },
-                    "__label": "person",
-                    "person": null
-                  },
-                  "label": "person",
-                  "line_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "points": [
-                    {
-                      "py/tuple": [
-                        369.49152542372883,
-                        229.66101694915255
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        416.52542372881356,
-                        270.33898305084745
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        433.4745762711865,
-                        290.6779661016949
-                      ]
-                    }
-                  ],
-                  "shape_type": "linestrip"
-                }
-              }
-            ]
-          }
-        },
-        {
           "py/object": "labelme.shape.Shape",
           "py/state": {
             "fill_color": {
@@ -620,6 +410,216 @@
               }
             ],
             "shape_type": "polygon"
+          }
+        },
+        {
+          "py/object": "labelme.shape.MultiShape",
+          "py/state": {
+            "fill_color": {
+              "py/reduce": [
+                {
+                  "py/function": "PyQt5.sip._unpickle_type"
+                },
+                {
+                  "py/tuple": [
+                    "PyQt5.QtGui",
+                    "QColor",
+                    {
+                      "py/tuple": [
+                        0,
+                        125,
+                        52,
+                        128
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "form": null,
+            "label": "person",
+            "line_color": {
+              "py/id": 15
+            },
+            "sub_shapes": [
+              {
+                "py/object": "labelme.shape.Shape",
+                "py/state": {
+                  "fill_color": {
+                    "py/tuple": [
+                      0,
+                      125,
+                      52,
+                      128
+                    ]
+                  },
+                  "form": {
+                    "__flags": {
+                      "occluded": false,
+                      "truncated": false
+                    },
+                    "__label": "person",
+                    "person": null
+                  },
+                  "label": "person",
+                  "line_color": {
+                    "py/tuple": [
+                      0,
+                      125,
+                      52,
+                      128
+                    ]
+                  },
+                  "points": [
+                    {
+                      "py/tuple": [
+                        337.7118644067797,
+                        155.08474576271186
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        325.0,
+                        186.4406779661017
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        318.22033898305085,
+                        213.135593220339
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        330.08474576271186,
+                        275.0
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        330.93220338983053,
+                        306.35593220338984
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        320.7627118644068,
+                        479.66101694915255
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        316.9491525423729,
+                        505.50847457627117
+                      ]
+                    }
+                  ],
+                  "shape_type": "linestrip"
+                }
+              },
+              {
+                "py/object": "labelme.shape.Shape",
+                "py/state": {
+                  "fill_color": {
+                    "py/tuple": [
+                      0,
+                      125,
+                      52,
+                      128
+                    ]
+                  },
+                  "form": {
+                    "__flags": {
+                      "occluded": false,
+                      "truncated": false
+                    },
+                    "__label": "person",
+                    "person": null
+                  },
+                  "label": "person",
+                  "line_color": {
+                    "py/tuple": [
+                      0,
+                      125,
+                      52,
+                      128
+                    ]
+                  },
+                  "points": [
+                    {
+                      "py/tuple": [
+                        329.66101694915255,
+                        212.71186440677968
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        441.5254237288136,
+                        204.23728813559322
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        457.2033898305085,
+                        177.96610169491527
+                      ]
+                    }
+                  ],
+                  "shape_type": "linestrip"
+                }
+              },
+              {
+                "py/object": "labelme.shape.Shape",
+                "py/state": {
+                  "fill_color": {
+                    "py/tuple": [
+                      0,
+                      125,
+                      52,
+                      128
+                    ]
+                  },
+                  "form": {
+                    "__flags": {
+                      "occluded": false,
+                      "truncated": false
+                    },
+                    "__label": "person",
+                    "person": null
+                  },
+                  "label": "person",
+                  "line_color": {
+                    "py/tuple": [
+                      0,
+                      125,
+                      52,
+                      128
+                    ]
+                  },
+                  "points": [
+                    {
+                      "py/tuple": [
+                        369.49152542372883,
+                        229.66101694915255
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        416.52542372881356,
+                        270.33898305084745
+                      ]
+                    },
+                    {
+                      "py/tuple": [
+                        433.4745762711865,
+                        290.6779661016949
+                      ]
+                    }
+                  ],
+                  "shape_type": "linestrip"
+                }
+              }
+            ]
           }
         },
         {

@@ -97,7 +97,7 @@ class Canvas(QtWidgets.QWidget):
     def load_snapshot(self, value):
         # Loading image clears all shapes, so it goes first.
         self.load_image_file(value['image_file'])
-        self.shapes = value['shapes']
+        self.loadShapes(value['shapes'])
 
     def is_empty(self):
         return self.pixmap is None
@@ -191,7 +191,7 @@ class Canvas(QtWidgets.QWidget):
                         self._hShape.highlightClear()
                     self._hVertex = index
                     self._hShape = shape
-                    self.hEdge = index_edge
+                    self._hEdge = index_edge
                     shape.highlightVertex(index, shape.MOVE_VERTEX)
                     self.overrideCursor(CURSOR_POINT)
                     self.setToolTip("Click & drag to move point")
@@ -203,7 +203,7 @@ class Canvas(QtWidgets.QWidget):
                         self._hShape.highlightClear()
                     self._hVertex = None
                     self._hShape = shape
-                    self.hEdge = index_edge
+                    self._hEdge = index_edge
                     self.setToolTip(
                         "Click & drag to move shape '%s'" % shape.label)
                     self.setStatusTip(self.toolTip())
@@ -214,8 +214,8 @@ class Canvas(QtWidgets.QWidget):
                 if self._hShape:
                     self._hShape.highlightClear()
                     self.update()
-                self._hVertex, self._hShape, self.hEdge = None, None, None
-            self.edgeSelected.emit(self.hEdge is not None)
+                self._hVertex, self._hShape, self._hEdge = None, None, None
+            self.edgeSelected.emit(self._hEdge is not None)
 
         try:
             if QT5:
@@ -270,17 +270,17 @@ class Canvas(QtWidgets.QWidget):
 
     def addPointToEdge(self):
         if (self._hShape is None and
-                self.hEdge is None and
+                self._hEdge is None and
                 self._prevMovePoint is None):
             return
         shape = self._hShape
-        index = self.hEdge
+        index = self._hEdge
         point = self._prevMovePoint
         shape.insertPoint(index, point)
         shape.highlightVertex(index, shape.MOVE_VERTEX)
         self._hShape = shape
         self._hVertex = index
-        self.hEdge = None
+        self._hEdge = None
 
     @property
     def join_shapes_dialog(self):
@@ -294,6 +294,7 @@ class Canvas(QtWidgets.QWidget):
         new_shape = MultiShape(shapes)
         self.shapes.append(new_shape)
         self.mergeShape.emit(shapes, new_shape)
+        self.storeShapes()
         self.repaint()
 
     def mousePressEvent(self, ev):
@@ -503,8 +504,7 @@ class Canvas(QtWidgets.QWidget):
         for shape in self.shapes:
             selected = shape in selected_shapes_set
             if (selected or not self._hideBackground) and self.isCanvasVisible(shape):
-                shape.fill = selected or shape == self._hShape
-                shape.paint(p)
+                shape.paint(p, fill=(selected or shape == self._hShape))
         if self._current:
             self._current.paint(p)
         if self.selectedShapesCopy:
@@ -539,7 +539,7 @@ class Canvas(QtWidgets.QWidget):
 
     def finalise(self):
         assert self._current
-        self._current.set_immutable()
+        self._current.finalize()
         self.shapes.append(self._current)
         self.storeShapes()
         self._current = None

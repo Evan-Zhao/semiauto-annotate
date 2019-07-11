@@ -101,7 +101,6 @@ class Shape(object):
         if init_point:
             self._points.append(init_point)
             self._cursor_point = init_point
-        self.fill = False
         self.shape_type = shape_type
 
         self._highlightIndex = None
@@ -112,7 +111,6 @@ class Shape(object):
         }
 
         self._polygon_closed = False
-        self._immutable = False
 
         if line_color is not None:
             # Override the class line_color attribute
@@ -127,7 +125,6 @@ class Shape(object):
     def from_list(cls, lst, **kwargs):
         inst = cls(**kwargs)
         inst._points = lst
-        inst._immutable = True
         return inst
 
     @property
@@ -169,8 +166,7 @@ class Shape(object):
     def last_line_color(self):
         return self.line_color if self.closed else DEFAULT_LAST_LINE_COLOR
 
-    def set_immutable(self):
-        self._immutable = True
+    def finalize(self):
         self._cursor_point = None
 
     def commit_point(self, cursor_point=None):
@@ -210,7 +206,7 @@ class Shape(object):
         x2, y2 = pt2.x(), pt2.y()
         return QtCore.QRectF(x1, y1, x2 - x1, y2 - y1)
 
-    def paint(self, painter):
+    def paint(self, painter, fill=False):
         actual_points = (self._points + [self._cursor_point]) if self._cursor_point else self._points
 
         def drawVertex(path, idx):
@@ -287,7 +283,7 @@ class Shape(object):
         painter.drawPath(line_path1)
         painter.setPen(pen2)
         painter.drawPath(line_path2)
-        if self.fill:
+        if fill:
             color = self.fill_color
             painter.fillPath(line_path1, color)
 
@@ -391,7 +387,25 @@ class Shape(object):
         self._points[key] = value
 
 
-class MultiShape(Shape):
+class MultiShape:
+    class PointIndexer:
+        def __init__(self, shapes):
+            self._point_to_shape = {(p.x(), p.y()): s for s in shapes for p in s}
+            self._index_to_shape_idx = {}
+            index, shape_index_start = 0, 0
+            for s in shapes:
+                shape_index_start = index
+                for _ in s:
+                    self._index_to_shape_idx[index] = (s, shape_index_start)
+                    index += 1
+
+        def get_shape(self, p):
+            return self._point_to_shape[(p.x(), p.y())]
+
+        def get_shape_and_index(self, i):
+            shape, idx_start = self._index_to_shape_idx[i]
+            return shape, i - idx_start
+
     def __init__(self, shapes):
         """
         Initialize super class with all points of all shapes
@@ -401,17 +415,33 @@ class MultiShape(Shape):
         all_points = [p for s in shapes for p in s]
         self._points = all_points
         self._shapes = shapes
+        self._point_indexer = MultiShape.PointIndexer(shapes)
+        # The following methods can be dispatched into a dummy Shape
+        # with the points of all subshapes:
+        self._dispatchable = {
+            'nearestVertex', 'nearestEdge', 'makePath', 'containsPoint', 'boundingRect',
+            'MOVE_VERTEX', 'NEAR_VERTEX'
+        }
+        self._dummy_shape = Shape.from_list(self._points)
         self.label = shapes[0].label if shapes else None
         self.line_color = shapes[0].line_color if shapes else None
         self.fill_color = self.line_color
         self.form = None
 
-    def paint(self, painter):
+    def __getattr__(self, item):
+        if item in self._dispatchable:
+            return getattr(self._dummy_shape, item)
+        raise AttributeError(item)
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def paint(self, painter, fill=False):
         for s in self._shapes:
-            s.paint(painter)
+            s.paint(painter, fill)
         pen = QtGui.QPen(self.line_color)
         # Wider line than shape itself
-        pen.setWidth(max(1, int(round(4.0 / self.scale))))
+        pen.setWidth(max(1, int(round(4.0 / Shape.scale))))
         pen.setStyle(QtCore.Qt.DashLine)
         painter.setPen(pen)
         path = QtGui.QPainterPath()
@@ -421,6 +451,26 @@ class MultiShape(Shape):
             path.moveTo(s1[-1])
             path.lineTo(s2[-1])
         painter.drawPath(path)
+
+    def highlightVertex(self, i, action):
+        """Send highlight vertex index to the shape it belongs in."""
+        shape, i = self._point_indexer.get_shape_and_index(i)
+        shape.highlightVertex(i, action)
+
+    def highlightClear(self):
+        """Clear highlight of ALL sub-shapes."""
+        for s in self._shapes:
+            s.highlightClear()
+
+    def moveBy(self, offset):
+        self._dummy_shape.moveBy(offset)
+        for s in self._shapes:
+            s.moveBy(offset)
+
+    def moveVertexBy(self, i, offset):
+        self._dummy_shape.moveVertexBy(i, offset)
+        shape, i = self._point_indexer.get_shape_and_index(i)
+        shape.moveVertexBy(i, offset)
 
     def __getstate__(self):
         return dict(
