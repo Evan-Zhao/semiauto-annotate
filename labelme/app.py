@@ -9,15 +9,15 @@ from qtpy import QtGui
 from qtpy import QtWidgets
 from qtpy.QtCore import Qt
 
+import labelme.utils as utils
 from labelme import QT5
 from labelme import __appname__
 from labelme.config import get_config
-from labelme.label_file import LabelFile
-from labelme.label_file import LabelFileError
 from labelme.logger import logger
 from labelme.shape import DEFAULT_FILL_COLOR
 from labelme.shape import DEFAULT_LINE_COLOR
 from labelme.shape import Shape
+from labelme.utils import LabelFile, ImageFile, Config
 from labelme.widgets import Canvas
 from labelme.widgets import ColorDialog
 from labelme.widgets import EscapableQListWidget
@@ -25,7 +25,6 @@ from labelme.widgets import LabelDialog
 from labelme.widgets import LabelQListWidget
 from labelme.widgets import ToolBar
 from labelme.widgets import ZoomWidget
-from . import utils
 
 
 # FIXME
@@ -39,8 +38,18 @@ from . import utils
 # - Zoom is too "steppy".
 
 
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
 class MainWindow(QtWidgets.QMainWindow):
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = 0, 1, 2
+    __metaclass__ = Singleton
 
     def __init__(
             self,
@@ -57,10 +66,12 @@ class MainWindow(QtWidgets.QMainWindow):
             if output_file is None:
                 output_file = output
 
+        self.labelFile = None
+
         # see labelme/config/default_config.yaml for valid configuration
         if config is None:
             config = get_config()
-        self._config = config
+        Config.set_all(config)
 
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
@@ -99,8 +110,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.uniqLabelList.setToolTip(
             "Select label to start annotating for it. "
             "Press 'Esc' to deselect.")
-        if self._config['labels']:
-            self.uniqLabelList.addItems(set(self._config['labels']) - {'__flags'})
+        if Config.get('labels'):
+            self.uniqLabelList.addItems(set(Config.get('labels')) - {'__flags'})
             self.uniqLabelList.sortItems()
         self.label_dock = QtWidgets.QDockWidget(u'Label List', self)
         self.label_dock.setObjectName(u'Label List')
@@ -128,19 +139,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.colorDialog = ColorDialog(parent=self)
 
         self.canvas = self.labelList.canvas = Canvas(
-            epsilon=self._config['epsilon'],
-            label_color=self._config['label_color']  # assuming labels never change
+            epsilon=Config.get('epsilon'),
+            label_color=Config.get('label_color')  # assuming labels never change
         )
         self.canvas.zoomRequest.connect(self.zoomRequest)
 
         self.labelDialog = LabelDialog(
             parent=self.canvas,
-            labels=self._config['labels'],
-            label_flags=self._config['label_flags'],
-            sort_labels=self._config['sort_labels'],
-            show_text_field=self._config['show_label_text_field'],
-            completion=self._config['label_completion'],
-            fit_to_content=self._config['fit_to_content']
+            labels=Config.get('labels'),
+            label_flags=Config.get('label_flags'),
+            sort_labels=Config.get('sort_labels'),
+            show_text_field=Config.get('show_label_text_field'),
+            completion=Config.get('label_completion'),
+            fit_to_content=Config.get('fit_to_content')
         )
 
         scrollArea = QtWidgets.QScrollArea()
@@ -162,14 +173,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
         for dock in ['flag_dock', 'label_dock', 'shape_dock', 'file_dock']:
-            if self._config[dock]['closable']:
+            if Config.get((dock, 'closable')):
                 features = features | QtWidgets.QDockWidget.DockWidgetClosable
-            if self._config[dock]['floatable']:
+            if Config.get((dock, 'floatable')):
                 features = features | QtWidgets.QDockWidget.DockWidgetFloatable
-            if self._config[dock]['movable']:
+            if Config.get((dock, 'movable')):
                 features = features | QtWidgets.QDockWidget.DockWidgetMovable
             getattr(self, dock).setFeatures(features)
-            if self._config[dock]['show'] is False:
+            if Config.get((dock, 'show')) is False:
                 getattr(self, dock).setVisible(False)
 
         self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
@@ -179,7 +190,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Actions
         action = functools.partial(utils.newAction, self)
-        shortcuts = self._config['shortcuts']
+        shortcuts = Config.get('shortcuts')
         quit = action('&Quit', self.close, shortcuts['quit'], 'quit',
                       'Quit application')
         open_ = action('&Open', self.openFile, shortcuts['open'], 'open',
@@ -232,7 +243,7 @@ class MainWindow(QtWidgets.QMainWindow):
             checkable=True,
             enabled=True,
         )
-        saveAuto.setChecked(self._config['auto_save'])
+        saveAuto.setChecked(Config.get('auto_save'))
 
         close = action('&Close', self.closeFile, shortcuts['close'], 'close',
                        'Close current file')
@@ -249,7 +260,7 @@ class MainWindow(QtWidgets.QMainWindow):
             shortcuts['toggle_keep_prev_mode'], None,
             'Toggle "keep pevious annotation" mode',
             checkable=True)
-        toggle_keep_prev_mode.setChecked(self._config['keep_prev'])
+        toggle_keep_prev_mode.setChecked(Config.get('keep_prev'))
 
         createMode = action(
             'Create Polygons',
@@ -578,7 +589,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar().showMessage('%s started.' % __appname__)
         self.statusBar().show()
 
-        if output_file is not None and self._config['auto_save']:
+        if output_file is not None and Config.get('auto_save'):
             logger.warn(
                 'If `auto_save` argument is True, `output_file` argument '
                 'is ignored and output filename is automatically '
@@ -588,7 +599,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.output_dir = output_dir
 
         # Application state.
-        self.image = QtGui.QImage()
         self.imagePath = None
         self.recentFiles = []
         self.maxRecent = 7
@@ -683,7 +693,7 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(self.menus.edit, actions + self.actions.editMenu)
 
     def setDirty(self):
-        if self._config['auto_save'] or self.actions.saveAuto.isChecked():
+        if Config.get('auto_save') or self.actions.saveAuto.isChecked():
             label_file = osp.splitext(self.imagePath)[0] + '.json'
             if self.output_dir:
                 label_file_without_path = osp.basename(label_file)
@@ -734,7 +744,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList.clear()
         self.filename = None
         self.imagePath = None
-        self.imageData = None
         self.labelFile = None
         self.otherData = None
         self.canvas.resetState()
@@ -824,15 +833,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def validateLabel(self, label):
         # no validation
-        if self._config['validate_label'] is None:
+        if Config.get('validate_label') is None:
             return True
 
         for i in range(self.uniqLabelList.count()):
             label_i = self.uniqLabelList.item(i).text()
-            if self._config['validate_label'] in ['exact', 'instance']:
+            if Config.get('validate_label') in ['exact', 'instance']:
                 if label_i == label:
                     return True
-            if self._config['validate_label'] == 'instance':
+            if Config.get('validate_label') == 'instance':
                 m = re.match(r'^{}-[0-9]*$'.format(label_i), label)
                 if m:
                     return True
@@ -857,7 +866,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.validateLabel(text):
             self.errorMessage('Invalid label',
                               "Invalid label '{}' with validation type '{}'"
-                              .format(text, self._config['validate_label']))
+                              .format(text, Config.get('validate_label')))
             return
         self.canvas.setLabelFor(shape, text, form)
         item.setText(text)
@@ -963,36 +972,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.flag_widget.addItem(item)
 
     def saveLabels(self, filename):
-        lf = LabelFile()
-        shapes = [
-            shape.toJson(def_fill_color=self.fillColor, def_line_color=self.lineColor)
-            for shape in self.labelList.shapes
-        ]
-        flags = {}
-        for i in range(self.flag_widget.count()):
-            item = self.flag_widget.item(i)
-            key = item.text()
-            flag = item.checkState() == Qt.Checked
-            flags[key] = flag
+        from labelme.utils import LabelFileError
+        self.labelFile = LabelFile()
         try:
-            imagePath = osp.relpath(
-                self.imagePath, osp.dirname(filename))
-            imageData = self.imageData if self._config['store_data'] else None
             if osp.dirname(filename) and not osp.exists(osp.dirname(filename)):
                 os.makedirs(osp.dirname(filename))
-            lf.save(
-                filename=filename,
-                shapes=shapes,
-                imagePath=imagePath,
-                imageData=imageData,
-                imageHeight=self.image.height(),
-                imageWidth=self.image.width(),
-                lineColor=self.lineColor.getRgb(),
-                fillColor=self.fillColor.getRgb(),
-                otherData=self.otherData,
-                flags=flags,
-            )
-            self.labelFile = lf
+            self.labelFile.save(self.snapshot, filename=filename)
             items = self.fileListWidget.findItems(
                 self.imagePath, Qt.MatchExactly
             )
@@ -1047,9 +1032,9 @@ class MainWindow(QtWidgets.QMainWindow):
         extended = None
         if items:
             text = items[0].text()
-        if self._config['display_label_popup'] or not text:
+        if Config.get('display_label_popup') or not text:
             # instance label auto increment
-            if self._config['instance_label_auto_increment']:
+            if Config.get('instance_label_auto_increment'):
                 previous_label = self.labelDialog.edit.text()
                 split = previous_label.split('-')
                 if len(split) > 1 and split[-1].isdigit():
@@ -1066,7 +1051,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if text and not self.validateLabel(text):
             self.errorMessage('Invalid label',
                               "Invalid label '{}' with validation type '{}'"
-                              .format(text, self._config['validate_label']))
+                              .format(text, Config.get('validate_label')))
             text = ''
         if text:
             self.labelList.clearSelection()
@@ -1130,59 +1115,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def loadFile(self, filename=None):
         """Load the specified file, or the last opened file if None."""
-        # changing fileListWidget loads file
-        if (filename in self.imageList and
-                self.fileListWidget.currentRow() !=
-                self.imageList.index(filename)):
-            self.fileListWidget.setCurrentRow(self.imageList.index(filename))
-            self.fileListWidget.repaint()
-            return
 
-        self.resetState()
-        self.canvas.setEnabled(False)
-        if filename is None:
-            filename = self.settings.value('filename', '')
-        filename = str(filename)
-        if not QtCore.QFile.exists(filename):
+        def print_file_error(exception, filepath):
             self.errorMessage(
-                'Error opening file', 'No such file: <b>%s</b>' % filename)
-            return False
-        # assumes same name, but json extension
-        self.status("Loading %s..." % osp.basename(str(filename)))
-        label_file = osp.splitext(filename)[0] + '.json'
-        if self.output_dir:
-            label_file_without_path = osp.basename(label_file)
-            label_file = osp.join(self.output_dir, label_file_without_path)
-        if QtCore.QFile.exists(label_file) and \
-                LabelFile.is_label_file(label_file):
-            try:
-                self.labelFile = LabelFile(label_file)
-            except LabelFileError as e:
-                self.errorMessage(
-                    'Error opening file',
-                    "<p><b>%s</b></p>"
-                    "<p>Make sure <i>%s</i> is a valid label file."
-                    % (e, label_file))
-                self.status("Error reading %s" % label_file)
-                return False
-            self.imageData = self.labelFile.imageData
-            self.imagePath = osp.join(
-                osp.dirname(label_file),
-                self.labelFile.imagePath,
-            )
-            if self.labelFile.lineColor is not None:
-                self.lineColor = QtGui.QColor(*self.labelFile.lineColor)
-            if self.labelFile.fillColor is not None:
-                self.fillColor = QtGui.QColor(*self.labelFile.fillColor)
-            self.otherData = self.labelFile.otherData
-        else:
-            self.imageData = LabelFile.load_image_file(filename)
-            if self.imageData:
-                self.imagePath = filename
-            self.labelFile = None
-        image = QtGui.QImage.fromData(self.imageData)
+                'Error opening file',
+                "<p><b>%s</b></p>"
+                "<p>Make sure <i>%s</i> is a valid label file."
+                % (exception, filepath))
+            self.status("Error reading %s" % filepath)
 
-        if image.isNull():
+        def print_image_unsupported_error(filename):
             formats = ['*.{}'.format(fmt.data().decode())
                        for fmt in QtGui.QImageReader.supportedImageFormats()]
             self.errorMessage(
@@ -1192,19 +1134,59 @@ class MainWindow(QtWidgets.QMainWindow):
                     .format(filename, ','.join(formats)))
             self.status("Error reading %s" % filename)
             return False
-        self.image = image
+
+        from labelme.utils import ImageFileIOError, LabelFileError, ImageUnsupportedError
+
+        # changing fileListWidget loads file
+        if (
+                filename in self.imageList and
+                self.fileListWidget.currentRow() != self.imageList.index(filename)
+        ):
+            self.fileListWidget.setCurrentRow(self.imageList.index(filename))
+            self.fileListWidget.repaint()
+            return
+
+        self.resetState()
+        self.canvas.setEnabled(False)
+        filename = str(filename or self.settings.value('filename', ''))
+        if not QtCore.QFile.exists(filename):
+            self.errorMessage(
+                'Error opening file', 'No such file: <b>%s</b>' % filename)
+            return False
+        self.status("Loading %s..." % osp.basename(filename))
+        # If user input is a label file, read it and quit on error
+        label_file, image_file = None, None
+        if LabelFile.is_label_file(filename):
+            try:
+                label_file = LabelFile(filename)
+            except LabelFileError as e:
+                print_file_error(e, filename)
+                return False
+        else:
+            # Otherwise, read the corresponding label file first.
+            label_filename = LabelFile.to_label_file_path(filename, self.output_dir)
+            try:
+                label_file = LabelFile(label_filename)
+            except LabelFileError:
+                pass
+            # Then read the image file whatsoever.
+            try:
+                image_file = ImageFile(filename)
+            except ImageFileIOError as e:
+                print_file_error(e, filename)
+                return False
+            except ImageUnsupportedError:
+                print_image_unsupported_error(filename)
+        if label_file:
+            # self.labelFile = label_file
+            self.load_snapshot(label_file.main_snapshot)
+        else:
+            self.canvas.load_image_file(image_file)
         self.filename = filename
-        if self._config['keep_prev']:
-            prev_shapes = self.canvas.shapes
-        self.canvas.loadPixmap(QtGui.QPixmap.fromImage(image))
-        if self._config['flags']:
-            self.loadFlags({k: False for k in self._config['flags']})
-        if self.labelFile:
-            self.loadLabels(self.labelFile.shapes)
-            if self.labelFile.flags is not None:
-                self.loadFlags(self.labelFile.flags)
-        if self._config['keep_prev'] and not self.labelList.shapes:
-            self.loadShapes(prev_shapes, replace=False)
+        # if not Config.get('keep_prev'):
+        #     self.canvas.load_image_file(image_file)
+        if Config.get('flags'):
+            self.loadFlags({k: False for k in Config.get('flags')})
         self.setClean()
         self.canvas.setEnabled(True)
         self.adjustScale(initial=True)
@@ -1215,13 +1197,12 @@ class MainWindow(QtWidgets.QMainWindow):
         return True
 
     def resizeEvent(self, event):
-        if self.canvas and not self.image.isNull() \
+        if self.canvas and not self.canvas.is_empty() \
                 and self.zoomMode != self.MANUAL_ZOOM:
             self.adjustScale()
         super(MainWindow, self).resizeEvent(event)
 
     def paintCanvas(self):
-        assert not self.image.isNull(), "cannot paint null image"
         self.canvas.scale = 0.01 * self.zoomWidget.value()
         self.canvas.adjustSize()
         self.canvas.update()
@@ -1268,10 +1249,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.loadFile(filename)
 
     def openPrevImg(self, _value=False):
-        keep_prev = self._config['keep_prev']
+        keep_prev = Config.get('keep_prev')
         if QtGui.QGuiApplication.keyboardModifiers() == \
                 (QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier):
-            self._config['keep_prev'] = True
+            Config.set('keep_prev', True)
 
         if not self.mayContinue():
             return
@@ -1288,13 +1269,13 @@ class MainWindow(QtWidgets.QMainWindow):
             if filename:
                 self.loadFile(filename)
 
-        self._config['keep_prev'] = keep_prev
+        Config.set('keep_prev', keep_prev)
 
     def openNextImg(self, _value=False, load=True):
-        keep_prev = self._config['keep_prev']
+        keep_prev = Config.get('keep_prev')
         if QtGui.QGuiApplication.keyboardModifiers() == \
                 (QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier):
-            self._config['keep_prev'] = True
+            Config.set('keep_prev', True)
 
         if not self.mayContinue():
             return
@@ -1316,7 +1297,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.filename and load:
             self.loadFile(self.filename)
 
-        self._config['keep_prev'] = keep_prev
+        Config.set('keep_prev', keep_prev)
 
     def openFile(self, _value=False):
         if not self.mayContinue():
@@ -1370,8 +1351,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.fileListWidget.repaint()
 
     def saveFile(self, _value=False):
-        assert not self.image.isNull(), "cannot save empty image"
-        if self._config['flags'] or self.hasLabels():
+        if Config.get('flags') or self.hasLabels():
             if self.labelFile:
                 # DL20180323 - overwrite when in directory
                 self._saveFile(self.labelFile.filename)
@@ -1382,7 +1362,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self._saveFile(self.saveFileDialog())
 
     def saveFileAs(self, _value=False):
-        assert not self.image.isNull(), "cannot save empty image"
         if self.hasLabels():
             self._saveFile(self.saveFileDialog())
 
@@ -1519,7 +1498,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setDirty()
 
     def toggleKeepPrevMode(self):
-        self._config['keep_prev'] = not self._config['keep_prev']
+        Config.set('keep_prev', not Config.get('keep_prev'))
 
     def deleteSelectedShape(self):
         yes, no = QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No
@@ -1626,3 +1605,26 @@ class MainWindow(QtWidgets.QMainWindow):
                     images.append(relativePath)
         images.sort(key=lambda x: x.lower())
         return images
+
+    @property
+    def snapshot(self):
+        flags = {}
+        for i in range(self.flag_widget.count()):
+            item = self.flag_widget.item(i)
+            key = item.text()
+            flag = item.checkState() == Qt.Checked
+            flags[key] = flag
+        ret = {
+            'flags': flags,
+            'canvas': self.canvas.snapshot,
+            'lineColor': self.lineColor,
+            'fillColor': self.fillColor
+        }
+        ret.update(self.otherData or {})
+        return ret
+
+    def load_snapshot(self, value):
+        self.canvas.load_snapshot(value['canvas'])
+        self.lineColor = value['lineColor']
+        self.fillColor = value['fillColor']
+        value['flags']

@@ -39,6 +39,7 @@ class Canvas(QtWidgets.QWidget):
         self.label_color = kwargs.pop('label_color')
         super(Canvas, self).__init__(*args, **kwargs)
         # Initialise local state.
+        self.image_file = None
         self.mode = self.EDIT
         self.shapes = []
         self.shapesBackups = []
@@ -50,7 +51,7 @@ class Canvas(QtWidgets.QWidget):
         self.offsets = QtCore.QPointF(), QtCore.QPointF()
         self.imagePos = QtCore.QPointF()
         self.scale = 1.0
-        self.pixmap = QtGui.QPixmap()
+        self.pixmap = None
         self.visible = {}
         self._hideBackround = False
         self.hideBackround = False
@@ -84,6 +85,20 @@ class Canvas(QtWidgets.QWidget):
                          'line', 'point', 'linestrip', 'curve', 'freeform']:
             raise ValueError('Unsupported createMode: %s' % value)
         self._createMode = value
+
+    @property
+    def snapshot(self):
+        return {
+            'shapes': self.shapes,
+            'image_file': self.image_file
+        }
+
+    def load_snapshot(self, value):
+        self.shapes = value['shapes']
+        self.load_image_file(value['image_file'])
+
+    def is_empty(self):
+        return self.pixmap is None
 
     def storeShapes(self):
         shapesBackup = []
@@ -678,9 +693,11 @@ class Canvas(QtWidgets.QWidget):
             self.drawingPolygon.emit(False)
         self.repaint()
 
-    def loadPixmap(self, pixmap):
-        self.pixmap = pixmap
-        self.shapes = []
+    def load_image_file(self, image_file, keep_prev=False):
+        self.image_file = image_file
+        self.pixmap = image_file.pixmap
+        if not keep_prev:
+            self.shapes = []
         self.repaint()
 
     def loadShapes(self, shapes, replace=True):

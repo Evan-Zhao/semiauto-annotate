@@ -6,6 +6,9 @@ from .image import apply_exif_orientation
 from .image import img_arr_to_b64
 from .image import img_b64_to_arr
 from .image import img_data_to_png_data
+from .image import ImageFile, ImageFileIOError, ImageUnsupportedError
+
+from .label_file import LabelFile, LabelFileError
 
 from .shape import labelme_shapes_to_label
 from .shape import masks_to_bboxes
@@ -27,3 +30,5 @@ from .qt import struct
 from .qt import distance
 from .qt import distancetoline
 from .qt import fmtShortcut
+
+from .config import Config

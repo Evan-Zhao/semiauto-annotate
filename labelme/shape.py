@@ -363,17 +363,23 @@ class Shape(object):
     def copy(self):
         return copy.deepcopy(self)
 
-    def toJson(self, def_line_color, def_fill_color):
+    def __getstate__(self):
         return dict(
             label=self.label.encode('utf-8') if PY2 else self.label,
-            line_color=self.line_color.getRgb()
-            if self.line_color != def_line_color else None,
-            fill_color=self.fill_color.getRgb()
-            if self.fill_color != def_fill_color else None,
+            line_color=self.line_color.getRgb(),
+            fill_color=self.fill_color.getRgb(),
             points=[(p.x(), p.y()) for p in self._points],
             shape_type=self.shape_type,
             form=self.form
         )
+
+    def __setstate__(self, state):
+        self.label = state['label']
+        self.line_color = QtGui.QColor(*state['line_color'])
+        self.fill_color = QtGui.QColor(*state['fill_color'])
+        self._points = [QtCore.QPointF(*p) for p in state['points']]
+        self.shape_type = state['shape_type']
+        self.form = state['form']
 
     def __len__(self):
         return len(self._points)
@@ -397,6 +403,8 @@ class MultiShape(Shape):
         self._shapes = shapes
         self.label = shapes[0].label if shapes else None
         self.line_color = shapes[0].line_color if shapes else None
+        self.fill_color = self.line_color
+        self.form = None
 
     def paint(self, painter):
         for s in self._shapes:
@@ -413,3 +421,19 @@ class MultiShape(Shape):
             path.moveTo(s1[-1])
             path.lineTo(s2[-1])
         painter.drawPath(path)
+
+    def __getstate__(self):
+        return dict(
+            label=self.label.encode('utf-8') if PY2 else self.label,
+            line_color=self.line_color,
+            fill_color=self.fill_color,
+            sub_shapes=self._shapes,
+            form=self.form
+        )
+
+    def __setstate__(self, state):
+        self.label = state['label']
+        self.line_color = state['line_color']
+        self.fill_color = state['fill_color']
+        self._shapes = state['sub_shapes']
+        self.form = state['form']

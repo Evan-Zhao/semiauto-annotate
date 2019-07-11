@@ -6,6 +6,9 @@ import PIL.ExifTags
 import PIL.Image
 import PIL.ImageOps
 
+from .config import Config
+from labelme import PY2, QT4
+
 
 def img_b64_to_arr(img_b64):
     f = io.BytesIO()
@@ -80,3 +83,84 @@ def apply_exif_orientation(image):
         return image.transpose(PIL.Image.ROTATE_90)
     else:
         return image
+
+
+class ImageFileIOError(Exception):
+    pass
+
+
+class ImageUnsupportedError(Exception):
+    pass
+
+
+class ImageFile(object):
+    def __init__(self, filename=None):
+        self.data = None
+        self.image = None
+        self.pixmap = None
+        if filename is not None:
+            self.data = self._read_data(filename)
+            self.image = self._to_image(self.data)
+            self.pixmap = self._to_pixmap(self.image)
+        self.filename = filename
+
+    @staticmethod
+    def _read_data(filename):
+        import os.path as osp
+        from labelme import PY2, QT4
+
+        try:
+            image_pil = PIL.Image.open(filename)
+        except IOError as e:
+            raise ImageFileIOError(e)
+
+        # apply orientation to image according to exif
+        image_pil = apply_exif_orientation(image_pil)
+
+        with io.BytesIO() as f:
+            ext = osp.splitext(filename)[1].lower()
+            if PY2 and QT4:
+                extension = 'PNG'
+            elif ext in ['.jpg', '.jpeg']:
+                extension = 'JPEG'
+            else:
+                extension = 'PNG'
+            image_pil.save(f, format=extension)
+            f.seek(0)
+            return f.read()
+
+    @staticmethod
+    def _to_image(image_data):
+        from qtpy import QtGui
+        image = QtGui.QImage.fromData(image_data)
+        if image.isNull():
+            raise ImageUnsupportedError
+        return image
+
+    @staticmethod
+    def _to_pixmap(image):
+        from qtpy import QtGui
+        return QtGui.QPixmap.fromImage(image)
+
+    @staticmethod
+    def encode_data(data):
+        return base64.b64encode(data).decode('utf-8')
+
+    def __getstate__(self):
+        # osp.relpath(['imagePath'], osp.dirname(filename))
+        return {
+            'image_data': self.encode_data(self.data) if Config.get('store_data') else None,
+            'image_path': self.filename
+        }
+
+    def __setstate__(self, state):
+        # osp.join(osp.dirname(filename), data['imagePath'])
+        if state['image_data'] is not None:
+            self.data = base64.b64decode(state['image_data'])
+            if PY2 and QT4:
+                self.data = img_data_to_png_data(self.data)
+        else:
+            self.data = self._read_data(state['image_path'])
+        self.image = self._to_image(self.data)
+        self.pixmap = self._to_pixmap(self.image)
+        self.filename = state['image_path']
