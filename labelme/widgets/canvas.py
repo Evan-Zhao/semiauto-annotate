@@ -23,7 +23,7 @@ class Canvas(QtWidgets.QWidget):
     scrollRequest = QtCore.Signal(int, int)
     newShape = QtCore.Signal()
     mergeShape = QtCore.Signal(list, Shape)
-    selectionChanged = QtCore.Signal(list)
+    selectionChanged = QtCore.Signal()
     shapeMoved = QtCore.Signal()
     drawingPolygon = QtCore.Signal(bool)
     edgeSelected = QtCore.Signal(bool)
@@ -94,8 +94,9 @@ class Canvas(QtWidgets.QWidget):
         }
 
     def load_snapshot(self, value):
-        self.shapes = value['shapes']
+        # Loading image clears all shapes, so it goes first.
         self.load_image_file(value['image_file'])
+        self.shapes = value['shapes']
 
     def is_empty(self):
         return self.pixmap is None
@@ -694,10 +695,11 @@ class Canvas(QtWidgets.QWidget):
             self.drawingPolygon.emit(False)
         self.repaint()
 
-    def load_image_file(self, image_file, keep_prev=False):
+    def load_image_file(self, image_file):
+        from labelme.utils import Config
         self.image_file = image_file
         self.pixmap = image_file.pixmap
-        if not keep_prev:
+        if not Config.get('keep_prev'):
             self.shapes = []
         self.repaint()
 

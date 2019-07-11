@@ -932,32 +932,12 @@ class MainWindow(QtWidgets.QMainWindow):
             item = self.labelList.get_item_from_shape(shape)
             self.labelList.takeItem(self.labelList.row(item))
 
-    def loadShapes(self, shapes, replace=True):
+    def loadShapes(self, shapes):
         self._noSelectionSlot = True
         for shape in shapes:
             self.addLabel(shape)
         self.labelList.clearSelection()
         self._noSelectionSlot = False
-        self.canvas.loadShapes(shapes, replace=replace)
-
-    def loadLabels(self, shapes):
-        s = []
-        for label, points, line_color, fill_color, shape_type, form in shapes:
-            shape = Shape.from_list(
-                [QtCore.QPointF(x, y) for x, y in points],
-                label=label, shape_type=shape_type
-            )
-
-            if line_color:
-                shape.line_color = QtGui.QColor(*line_color)
-
-            if fill_color:
-                shape.fill_color = QtGui.QColor(*fill_color)
-
-            shape.form = form
-
-            s.append(shape)
-        self.loadShapes(s)
 
     def loadFlags(self, flags):
         self.flag_widget.clear()
@@ -1179,10 +1159,6 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.canvas.load_image_file(image_file)
         self.filename = filename
-        # if not Config.get('keep_prev'):
-        #     self.canvas.load_image_file(image_file)
-        if Config.get('flags'):
-            self.loadFlags({k: False for k in Config.get('flags')})
         self.setClean()
         self.canvas.setEnabled(True)
         self.adjustScale(initial=True)
@@ -1623,4 +1599,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.load_snapshot(value['canvas'])
         self.lineColor = value['lineColor']
         self.fillColor = value['fillColor']
-        value['flags']
+        if Config.get('flags'):
+            self.loadFlags({k: False for k in self._config['flags']})
+        self.loadShapes(self.canvas.shapes)
+        if value['flags']:
+            self.loadFlags(value['flags'])
