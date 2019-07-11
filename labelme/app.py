@@ -1151,7 +1151,7 @@ class MainWindow(QtWidgets.QMainWindow):
             except ImageUnsupportedError:
                 print_image_unsupported_error(filename)
         if label_file:
-            # self.labelFile = label_file
+            self.labelFile = label_file
             self.load_snapshot(label_file.main_snapshot)
         else:
             self.canvas.load_image_file(image_file)
