@@ -432,9 +432,8 @@ class MultiShape(Shape):
         )
 
     def __setstate__(self, state):
-        self.__init__()
+        self.__init__(state['sub_shapes'])
         self.label = state['label']
         self.line_color = state['line_color']
         self.fill_color = state['fill_color']
-        self._shapes = state['sub_shapes']
         self.form = state['form']
