@@ -154,6 +154,7 @@ class ImageFile(object):
         }
 
     def __setstate__(self, state):
+        self.__init__()
         # osp.join(osp.dirname(filename), data['imagePath'])
         if state['image_data'] is not None:
             self.data = base64.b64decode(state['image_data'])

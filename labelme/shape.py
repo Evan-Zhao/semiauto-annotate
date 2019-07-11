@@ -373,6 +373,7 @@ class Shape(object):
         )
 
     def __setstate__(self, state):
+        self.__init__()
         self.label = state['label']
         self.line_color = QtGui.QColor(*state['line_color'])
         self.fill_color = QtGui.QColor(*state['fill_color'])
@@ -431,6 +432,7 @@ class MultiShape(Shape):
         )
 
     def __setstate__(self, state):
+        self.__init__()
         self.label = state['label']
         self.line_color = state['line_color']
         self.fill_color = state['fill_color']
