@@ -138,10 +138,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.zoomWidget = ZoomWidget()
         self.colorDialog = ColorDialog(parent=self)
 
-        self.canvas = self.labelList.canvas = Canvas(
-            epsilon=Config.get('epsilon'),
-            label_color=Config.get('label_color')  # assuming labels never change
-        )
+        self.canvas = self.labelList.canvas = Canvas()
         self.canvas.zoomRequest.connect(self.zoomRequest)
 
         self.labelDialog = LabelDialog(
