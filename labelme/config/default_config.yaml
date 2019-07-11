@@ -5,7 +5,6 @@ store_data: true
 keep_prev: false
 logger_level: info
 
-flags: null
 label_flags:
   occluded: bool
   truncated: bool

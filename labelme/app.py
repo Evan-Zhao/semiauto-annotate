@@ -38,18 +38,8 @@ from labelme.widgets import ZoomWidget
 # - Zoom is too "steppy".
 
 
-class Singleton(type):
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
-
-
 class MainWindow(QtWidgets.QMainWindow):
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = 0, 1, 2
-    __metaclass__ = Singleton
 
     def __init__(
             self,
@@ -65,35 +55,25 @@ class MainWindow(QtWidgets.QMainWindow):
             )
             if output_file is None:
                 output_file = output
+        super(MainWindow, self).__init__()
 
         self.labelFile = None
 
+        # Register config to global position.
         # see labelme/config/default_config.yaml for valid configuration
         if config is None:
             config = get_config()
         Config.set_all(config)
 
-        super(MainWindow, self).__init__()
-        self.setWindowTitle(__appname__)
-
         # Whether we need to save or not.
         self.dirty = False
 
+        # Ignore signal flags
         self._noSelectionSlot = False
 
         # Main widgets and related state.
         self.labelList = LabelQListWidget()
         self.lastOpenDir = None
-
-        self.flag_dock = self.flag_widget = None
-        self.flag_dock = QtWidgets.QDockWidget('Flags', self)
-        self.flag_dock.setObjectName('Flags')
-        self.flag_widget = QtWidgets.QListWidget()
-        if config['flags']:
-            self.loadFlags({k: False for k in config['flags']})
-        self.flag_dock.setWidget(self.flag_widget)
-        self.flag_widget.itemChanged.connect(self.setDirty)
-
         self.labelList.itemActivated.connect(self.labelSelectionChanged)
         self.labelList.itemSelectionChanged.connect(self.labelSelectionChanged)
         self.labelList.itemDoubleClicked.connect(self.editLabel)
@@ -169,7 +149,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(scrollArea)
 
         features = QtWidgets.QDockWidget.DockWidgetFeatures()
-        for dock in ['flag_dock', 'label_dock', 'shape_dock', 'file_dock']:
+        for dock in ['label_dock', 'shape_dock', 'file_dock']:
             if Config.get((dock, 'closable')):
                 features = features | QtWidgets.QDockWidget.DockWidgetClosable
             if Config.get((dock, 'floatable')):
@@ -180,7 +160,6 @@ class MainWindow(QtWidgets.QMainWindow):
             if Config.get((dock, 'show')) is False:
                 getattr(self, dock).setVisible(False)
 
-        self.addDockWidget(Qt.RightDockWidgetArea, self.flag_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.label_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
@@ -528,7 +507,6 @@ class MainWindow(QtWidgets.QMainWindow):
         utils.addActions(
             self.menus.view,
             (
-                self.flag_dock.toggleViewAction(),
                 self.label_dock.toggleViewAction(),
                 self.shape_dock.toggleViewAction(),
                 self.file_dock.toggleViewAction(),
@@ -936,14 +914,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList.clearSelection()
         self._noSelectionSlot = False
 
-    def loadFlags(self, flags):
-        self.flag_widget.clear()
-        for key, flag in flags.items():
-            item = QtWidgets.QListWidgetItem(key)
-            item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Checked if flag else Qt.Unchecked)
-            self.flag_widget.addItem(item)
-
     def saveLabels(self, filename):
         from labelme.utils import LabelFileError
         self.labelFile = LabelFile()
@@ -1001,8 +971,6 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         items = self.uniqLabelList.selectedItems()
         text = None
-        flags = {}
-        extended = None
         if items:
             text = items[0].text()
         if Config.get('display_label_popup') or not text:
@@ -1320,7 +1288,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.fileListWidget.repaint()
 
     def saveFile(self, _value=False):
-        if Config.get('flags') or self.hasLabels():
+        if self.hasLabels():
             if self.labelFile:
                 # DL20180323 - overwrite when in directory
                 self._saveFile(self.labelFile.filename)
@@ -1577,14 +1545,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @property
     def snapshot(self):
-        flags = {}
-        for i in range(self.flag_widget.count()):
-            item = self.flag_widget.item(i)
-            key = item.text()
-            flag = item.checkState() == Qt.Checked
-            flags[key] = flag
         ret = {
-            'flags': flags,
             'canvas': self.canvas.snapshot,
             'lineColor': self.lineColor,
             'fillColor': self.fillColor
@@ -1596,8 +1557,4 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.load_snapshot(value['canvas'])
         self.lineColor = value['lineColor']
         self.fillColor = value['fillColor']
-        if Config.get('flags'):
-            self.loadFlags({k: False for k in self._config['flags']})
         self.loadShapes(self.canvas.shapes)
-        if value['flags']:
-            self.loadFlags(value['flags'])
