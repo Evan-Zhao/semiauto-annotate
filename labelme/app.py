@@ -898,18 +898,14 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.loadFile(filename)
 
     # React to canvas signals.
-    def shapeSelectionChanged(self, selected_shapes):
+    def shapeSelectionChanged(self):
         self._noSelectionSlot = True
-        for shape in self.canvas.selectedShapes:
-            shape.selected = False
         self.labelList.clearSelection()
-        self.canvas.selectedShapes = selected_shapes
         for shape in self.canvas.selectedShapes:
-            shape.selected = True
             item = self.labelList.get_item_from_shape(shape)
             item.setSelected(True)
         self._noSelectionSlot = False
-        n_selected = len(selected_shapes)
+        n_selected = len(self.canvas.selectedShapes)
         self.actions.delete.setEnabled(n_selected)
         self.actions.copy.setEnabled(n_selected)
         self.actions.edit.setEnabled(n_selected == 1)

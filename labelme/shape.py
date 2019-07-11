@@ -102,7 +102,6 @@ class Shape(object):
             self._points.append(init_point)
             self._cursor_point = init_point
         self.fill = False
-        self.selected = False
         self.shape_type = shape_type
 
         self._highlightIndex = None

@@ -121,8 +121,6 @@ class Canvas(QtWidgets.QWidget):
         shapesBackup = self.shapesBackups.pop()
         self.shapes = shapesBackup
         self.selectedShapes = []
-        for shape in self.shapes:
-            shape.selected = False
         self.repaint()
 
     def enterEvent(self, ev):
@@ -359,7 +357,6 @@ class Canvas(QtWidgets.QWidget):
         if copy:
             for i, shape in enumerate(self.selectedShapesCopy):
                 self.shapes.append(shape)
-                self.selectedShapes[i].selected = False
                 self.selectedShapes[i] = shape
         else:
             for i, shape in enumerate(self.selectedShapesCopy):
@@ -392,7 +389,8 @@ class Canvas(QtWidgets.QWidget):
 
     def selectShapes(self, shapes):
         self.setHiding()
-        self.selectionChanged.emit(shapes)
+        self.selectedShapes = shapes
+        self.selectionChanged.emit()
         self.update()
 
     def selectShapePoint(self, point, multiple_selection_mode):
@@ -407,10 +405,11 @@ class Canvas(QtWidgets.QWidget):
                     self.setHiding()
                     if multiple_selection_mode:
                         if shape not in self.selectedShapes:
-                            self.selectionChanged.emit(
-                                self.selectedShapes + [shape])
+                            self.selectedShapes.append(shape)
+                            self.selectionChanged.emit()
                     else:
-                        self.selectionChanged.emit([shape])
+                        self.selectedShapes = [shape]
+                        self.selectionChanged.emit()
                     return
         self.deSelectShape()
 
@@ -457,7 +456,8 @@ class Canvas(QtWidgets.QWidget):
     def deSelectShape(self):
         if self.selectedShapes:
             self.setHiding(False)
-            self.selectionChanged.emit([])
+            self.selectedShapes = []
+            self.selectionChanged.emit()
             self.update()
 
     def deleteSelected(self):
@@ -505,10 +505,11 @@ class Canvas(QtWidgets.QWidget):
         # so that they move along
         p.translate(self.imagePos)
         Shape.scale = self.scale
+        selected_shapes_set = set(self.selectedShapes)
         for shape in self.shapes:
-            if (shape.selected or not self._hideBackround) and \
-                    self.isCanvasVisible(shape):
-                shape.fill = shape.selected or shape == self.hShape
+            selected = shape in selected_shapes_set
+            if (selected or not self._hideBackround) and self.isCanvasVisible(shape):
+                shape.fill = selected or shape == self.hShape
                 shape.paint(p)
         if self.current:
             self.current.paint(p)
