@@ -121,15 +121,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas = self.labelList.canvas = Canvas()
         self.canvas.zoomRequest.connect(self.zoomRequest)
 
-        self.labelDialog = LabelDialog(
-            parent=self.canvas,
-            labels=Config.get('labels'),
-            label_flags=Config.get('label_flags'),
-            sort_labels=Config.get('sort_labels'),
-            show_text_field=Config.get('show_label_text_field'),
-            completion=Config.get('label_completion'),
-            fit_to_content=Config.get('fit_to_content')
-        )
+        self.labelDialog = LabelDialog(parent=self.canvas)
 
         scrollArea = QtWidgets.QScrollArea()
         scrollArea.setWidget(self.canvas)
@@ -836,7 +828,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = self.labelList.get_shape_from_item(item)
         if shape is None:
             return
-        text, form = self.labelDialog.popUp(text_or_form=shape.form)
+        text, form = self.labelDialog.popUp(shape)
         if text is None:
             return
         if not self.validateLabel(text):
@@ -986,7 +978,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     instance_text = previous_label
                 if instance_text != '':
                     text = instance_text
-            text, form = self.labelDialog.popUp(text)
+            text, form = self.labelDialog.popUp(self.shapes[-1], text=text)
             if text is None:
                 self.labelDialog.edit.setText(previous_label)
 

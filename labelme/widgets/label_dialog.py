@@ -6,7 +6,7 @@ from qtpy import QtWidgets
 QT5 = QT_VERSION[0] == '5'  # NOQA
 
 from labelme.logger import logger
-from labelme.custom_widgets.join_shapes_dialog import JoinShapesDialog
+from labelme.custom_widgets import PoseAnnotationDialog
 import labelme.utils
 
 
@@ -25,54 +25,23 @@ class LabelQLineEdit(QtWidgets.QLineEdit):
             super(LabelQLineEdit, self).keyPressEvent(e)
 
 
-class DialogContinuation(object):
-    """"""
-
-    def __init__(self, parent_dialog):
-        self.parent_dialog = parent_dialog
-        self.child_dialog = None
-
-    @staticmethod
-    def void(arg):
-        pass
-
-    def exec_(self, child_ret_processor=None):
-        v = DialogContinuation.void
-        if child_ret_processor is None:
-            child_ret_processor = v
-        parent_ret = self.parent_dialog.exec_()
-        while self.child_dialog:
-            child_ret = self.child_dialog.exec_()
-            child_ret_processor(child_ret)
-            self.child_dialog = None
-            parent_ret = self.parent_dialog.exec_()
-        return parent_ret
-
-    def switch_to_child(self, child_dialog):
-        # Hide parent dialog. Call to exec_() will return
-        # Store child dialog and execute it in our exec_()
-        # to prevent it from returning
-        self.parent_dialog.hide()
-        self.child_dialog = child_dialog
-
-
 class LabelDialog(QtWidgets.QDialog):
-    def __init__(self, text="Enter object label", parent=None, labels=None, label_flags=None,
-                 sort_labels=True, show_text_field=True,
-                 completion='startswith', fit_to_content=None):
+    def __init__(self, text="Enter object label", parent=None):
+        from labelme.utils import Config
+
         super(LabelDialog, self).__init__(parent)
-        self._form = None
+
         self._placeholder = text
-        self._show_text_field = show_text_field
-        self._sort_labels = sort_labels
-        self._labels = labels
-        self._label_flags = {} if label_flags is None else label_flags
+        self._show_text_field = Config.get('show_label_text_field')
+        self._sort_labels = Config.get('sort_labels')
+        self._labels = Config.get('labels')
+        self._label_flags = Config.get('label_flags', default={})
+        self._fit_to_content = Config.get('fit_to_content', default={'row': False, 'column': True})
+        self._form = None
+        self._selected_shape = None
         self._boxes = []
         self._bindings = {}
-        if fit_to_content is None:
-            fit_to_content = {'row': False, 'column': True}
-        self._fit_to_content = fit_to_content
-        self.completion = completion
+        self.completion = Config.get('label_completion')
         if not QT5 and self.completion != 'startswith':
             logger.warn(
                 "completion other than 'startswith' is only "
@@ -86,7 +55,7 @@ class LabelDialog(QtWidgets.QDialog):
         layout.addWidget(self.splitter)
         self.setLayout(layout)
         # Leftmost groupbox
-        top_level_group_box = self.make_group_box(labels, self._bindings)
+        top_level_group_box = self.make_group_box(self._labels, self._bindings)
         self.add_box(top_level_group_box)
         # buttons
         bb = QtWidgets.QDialogButtonBox(
@@ -99,9 +68,6 @@ class LabelDialog(QtWidgets.QDialog):
         bb.accepted.connect(self.validate)
         bb.rejected.connect(self.reject)
         layout.addWidget(bb)
-
-        self.join_dialog = None
-        self.dialog_continuation = DialogContinuation(self)
 
     @property
     def edit(self):
@@ -286,7 +252,7 @@ class LabelDialog(QtWidgets.QDialog):
             join_button = QtWidgets.QPushButton(parent=group_box, text='Join more shapes')
             join_button.clicked.connect(self.open_join_dialog)
             key_points_button = QtWidgets.QPushButton(parent=group_box, text='Annotate key points')
-            key_points_button.clicked.connect(self.open_key_points_dialog)
+            key_points_button.clicked.connect(self.open_pose_dialog)
             vertical_layout.addWidget(join_button)
             vertical_layout.addWidget(key_points_button)
             self.add_box(group_box)
@@ -298,12 +264,17 @@ class LabelDialog(QtWidgets.QDialog):
         After join dialog closes, the control doesn't return to this dialog,
         because # of shapes may have changed.
         """
-        self.reject()
+        # Should be accept (as opposed to reject)
+        # to let join dialog have the latest state.
+        self.accept()
         self.parent().join_shapes_dialog.exec_()
 
-    def open_key_points_dialog(self):
-        # TODO: key points dialog
-        pass
+    def open_pose_dialog(self):
+        """
+        Opens pose annotation dialog on button push.
+        """
+        pose_dialog = PoseAnnotationDialog(self.parent(), self._selected_shape)
+        pose_dialog.exec_()
 
     def post_process(self):
         edit = self.sender()
@@ -395,7 +366,7 @@ class LabelDialog(QtWidgets.QDialog):
         else:
             QtWidgets.QMessageBox.warning(self, 'Error', 'Label form is not complete')
 
-    def popUp(self, text_or_form=None, move=True):
+    def popUp(self, selected_shape, text=None, move=True):
         def dummy_form(t):
             return {
                 '__flags': {},
@@ -403,19 +374,24 @@ class LabelDialog(QtWidgets.QDialog):
                 t: None
             }
 
-        edit0 = self.get_edit_from_box(self._boxes[0])
-        if type(text_or_form) is str:
-            text = text_or_form
+        self._selected_shape = selected_shape
+
+        if selected_shape.form is None:
+            if text is None:
+                raise ValueError('Must provide text when shape has not been labeled')
             self.set_state_recursive(self._bindings, dummy_form(text))
-        elif type(text_or_form) is dict:
-            form = text_or_form
-            self.set_state_recursive(self._bindings, form)
+        else:
+            self.set_state_recursive(self._bindings, selected_shape.form)
+
+        edit0 = self.get_edit_from_box(self._boxes[0])
         edit0.setFocus(QtCore.Qt.PopupFocusReason)
 
         if move:
             self.move(QtGui.QCursor.pos())
-        if self.dialog_continuation.exec_():
+        if self.exec_():
             assert self._form is not None
             text = self._form['__label']
+            self._selected_shape = None
             return text, self._form
+        self._selected_shape = None
         return None, None

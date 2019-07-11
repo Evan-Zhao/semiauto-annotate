@@ -436,7 +436,14 @@
                 }
               ]
             },
-            "form": null,
+            "form": {
+              "__flags": {
+                "occluded": false,
+                "truncated": false
+              },
+              "__label": "person",
+              "person": null
+            },
             "label": "person",
             "line_color": {
               "py/id": 15
@@ -646,7 +653,14 @@
                 }
               ]
             },
-            "form": null,
+            "form": {
+              "__flags": {
+                "occluded": false,
+                "truncated": false
+              },
+              "__label": "person",
+              "person": null
+            },
             "label": "person",
             "line_color": {
               "py/id": 24
