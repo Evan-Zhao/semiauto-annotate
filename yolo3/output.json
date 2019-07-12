@@ -1,0 +1,182 @@
+[
+  {
+    "score": 0.9773022532463074,
+    "location": {
+      "top": 345,
+      "right": 347,
+      "bottom": 393,
+      "left": 252
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.9746614098548889,
+    "location": {
+      "top": 361,
+      "right": 903,
+      "bottom": 428,
+      "left": 792
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.9349716901779175,
+    "location": {
+      "top": 347,
+      "right": 128,
+      "bottom": 400,
+      "left": 49
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.9197579026222229,
+    "location": {
+      "top": 407,
+      "right": 1280,
+      "bottom": 533,
+      "left": 1213
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.9162547588348389,
+    "location": {
+      "top": 336,
+      "right": 57,
+      "bottom": 407,
+      "left": 0
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.9122397899627686,
+    "location": {
+      "top": 361,
+      "right": 728,
+      "bottom": 396,
+      "left": 688
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.907891035079956,
+    "location": {
+      "top": 342,
+      "right": 259,
+      "bottom": 384,
+      "left": 196
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.8699274063110352,
+    "location": {
+      "top": 381,
+      "right": 959,
+      "bottom": 445,
+      "left": 882
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.6383212804794312,
+    "location": {
+      "top": 362,
+      "right": 740,
+      "bottom": 399,
+      "left": 705
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.6362470388412476,
+    "location": {
+      "top": 356,
+      "right": 622,
+      "bottom": 383,
+      "left": 592
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.6219398379325867,
+    "location": {
+      "top": 361,
+      "right": 770,
+      "bottom": 404,
+      "left": 735
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.45432546734809875,
+    "location": {
+      "top": 364,
+      "right": 793,
+      "bottom": 411,
+      "left": 755
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.38797903060913086,
+    "location": {
+      "top": 357,
+      "right": 594,
+      "bottom": 377,
+      "left": 571
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.688843846321106,
+    "location": {
+      "top": 318,
+      "right": 1223,
+      "bottom": 483,
+      "left": 896
+    },
+    "class": "truck"
+  },
+  {
+    "score": 0.30975452065467834,
+    "location": {
+      "top": 358,
+      "right": 664,
+      "bottom": 386,
+      "left": 635
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.8972974419593811,
+    "location": {
+      "top": 339,
+      "right": 1218,
+      "bottom": 487,
+      "left": 909
+    },
+    "class": "truck"
+  },
+  {
+    "score": 0.9285492897033691,
+    "location": {
+      "top": 288,
+      "right": 856,
+      "bottom": 41,
+      "left": 793
+    },
+    "class": "truck"
+  },
+  {
+    "score": 0.40367427468299866,
+    "location": {
+      "top": 311,
+      "right": 705,
+      "bottom": 564,
+      "left": 953
+    },
+    "class": "traffic light"
+  }
+]
