@@ -6,7 +6,7 @@ import json
 
 
 def test_time_augmentation(yolo, origin_image, origin_result, magnifiy_range=np.linspace(2, 5, 10),
-                           loc_relative_error=0.05):
+                           loc_relative_error=0.2):
     '''
         Flip && Magnify i times
     '''
@@ -19,7 +19,7 @@ def test_time_augmentation(yolo, origin_image, origin_result, magnifiy_range=np.
             result = yolo.detect_image(image_magnified)
 
         for detect_item in result:
-            top, left, right, bottom = detect_item["location"].values()
+            top, right, bottom, left = detect_item["location"].values()
             if i == 0:
                 temp = left
                 left = image_flip.width - right
@@ -75,12 +75,12 @@ def detect_img(yolo, input, output):
     fo.write(json.dumps(result))
     fo.close()
     yolo.close_session()
-
+    '''
     thickness = (image.size[0] + image.size[1]) // 300
-
+    
     for item in result:
         draw = ImageDraw.Draw(image)
-        top, left, right, bottom = item["location"].values()
+        top, right, bottom, left = item["location"].values()
         top = max(0, np.floor(top + 0.5).astype('int32'))
         left = max(0, np.floor(left + 0.5).astype('int32'))
         bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
@@ -93,8 +93,7 @@ def detect_img(yolo, input, output):
                 outline=yolo.colors[9])
         del draw
     image.show()
-
-
+    '''
 
 
 FLAGS = None
@@ -149,3 +148,4 @@ if __name__ == '__main__':
     """
     print("Image detection mode")
     detect_img(YOLO(**vars(FLAGS)), FLAGS.input, FLAGS.output)
+

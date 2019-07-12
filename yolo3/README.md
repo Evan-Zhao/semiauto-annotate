@@ -18,11 +18,34 @@ A Keras implementation of YOLOv3 (Tensorflow backend) inspired by [allanzelener/
 ```
 wget https://pjreddie.com/media/files/yolov3.weights
 python convert.py yolov3.cfg yolov3.weights model_data/yolo.h5
-python yolo_video.py [OPTIONS...] --image, for image detection mode, OR
-python yolo_video.py [video_path] [output_path (optional)]
+python yolo_video.py --image --input [image_path] --output [output_json_path]
 ```
 
-For Tiny YOLOv3, just do in a similar way, just specify model path and anchor path with `--model model_file` and `--anchors anchor_file`.
+Here is the sample of output json file
+```JSON
+[
+ {
+    "score": 0.9773022532463074,
+    "location": {
+      "top": 345,
+      "right": 347,
+      "bottom": 393,
+      "left": 252
+    },
+    "class": "car"
+  },
+  {
+    "score": 0.9349716901779175,
+    "location": {
+      "top": 347,
+      "right": 128,
+      "bottom": 400,
+      "left": 49
+    },
+    "class": "car"
+  }
+]
+```
 
 ### Usage
 Use --help to see usage of yolo_video.py:

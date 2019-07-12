@@ -138,7 +138,7 @@ class YOLO(object):
             box = {"location": box_location, "class": class_name, "score": score}
             result.append(box)
 
-
+        '''
         font = ImageFont.truetype(font='font/FiraMono-Medium.otf',
                                   size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = (image.size[0] + image.size[1]) // 300
@@ -178,7 +178,7 @@ class YOLO(object):
         end = timer()
         print(end - start)
         image.show()
-
+        '''
         return result
 
     def close_session(self):
@@ -225,3 +225,4 @@ def detect_video(yolo, video_path, output_path=""):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     yolo.close_session()
+
