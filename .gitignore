@@ -35,4 +35,4 @@ venv/
 yolo3/model_data/yolo.h5
 yolo3/traffic_sign/traffic-signs-data
 yolo3/traffic_sign/models
-
+Multi-Person_Pose_Estimation/model/*.caffemodel
