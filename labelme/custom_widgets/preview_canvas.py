@@ -4,30 +4,25 @@ from qtpy import QtWidgets
 
 from labelme import QT5
 from labelme.shape import Shape
+from labelme.utils import Config
 
 
 class PreviewCanvas(QtWidgets.QWidget):
     zoomRequest = QtCore.Signal(int, QtCore.QPointF)
     scrollRequest = QtCore.Signal(int, int)
     selectionChanged = QtCore.Signal()
-
-    # polygon, rectangle, line, or point
-    _createMode = 'polygon'
-    _fill_drawing = False
+    vertexSelected = QtCore.Signal()
 
     def __init__(self, *args, **kwargs):
-        self.epsilon = kwargs.pop('epsilon', 10.0)
-        self.label_color = kwargs.pop('label_color')
+        self._epsilon = Config.get('epsilon', default=10.0)
+        self._label_color = Config.get('label_color')
         super(PreviewCanvas, self).__init__(*args, **kwargs)
         # Initialise local state.
         self.shapes = []
         self.selected_shapes = set()  # save the selected shapes here
-        self.imagePos = QtCore.QPointF()
-        self.scale = 1.0
-        self.pixmap = QtGui.QPixmap()
-        self.hShape = None
-        self.hVertex = None
-        self.hEdge = None
+        self.hShape, self.hVertex = None, None
+        self._imagePos, self._scale = QtCore.QPointF(), 1.0
+        self._pixmap = QtGui.QPixmap()
         self._painter = QtGui.QPainter()
         # Set widget options.
         self.setMouseTracking(True)
@@ -35,9 +30,9 @@ class PreviewCanvas(QtWidgets.QWidget):
 
     @classmethod
     def from_canvas(cls, canvas):
-        preview_canvas = cls(epsilon=canvas.epsilon, label_color=canvas.label_color)
+        preview_canvas = cls()
         preview_canvas.shapes = canvas.shapes
-        preview_canvas.pixmap = canvas.pixmap
+        preview_canvas._pixmap = canvas.pixmap
         return preview_canvas
 
     def set_selection_signal(self, selection_changed):
@@ -65,7 +60,7 @@ class PreviewCanvas(QtWidgets.QWidget):
             return
 
         # Transform pointer location by image offset
-        rel_pos = pos - self.imagePos
+        rel_pos = pos - self._imagePos
         # Just hovering over the canvas, 2 posibilities:
         # - Highlight shapes
         # - Highlight vertex
@@ -73,14 +68,12 @@ class PreviewCanvas(QtWidgets.QWidget):
         for shape in reversed([s for s in self.shapes]):
             # Look for a nearby vertex to highlight. If that fails,
             # check if we happen to be inside a shape.
-            index = shape.nearestVertex(rel_pos, self.epsilon / self.scale)
-            index_edge = shape.nearestEdge(rel_pos, self.epsilon / self.scale)
+            index = shape.nearestVertex(rel_pos, self._epsilon / self._scale)
             if index is not None:
                 if self.selectedVertex():
                     self.hShape.highlightClear()
                 self.hVertex = index
                 self.hShape = shape
-                self.hEdge = index_edge
                 shape.highlightVertex(index, shape.MOVE_VERTEX)
                 self.update()
                 break
@@ -89,7 +82,6 @@ class PreviewCanvas(QtWidgets.QWidget):
                     self.hShape.highlightClear()
                 self.hVertex = None
                 self.hShape = shape
-                self.hEdge = index_edge
                 self.setToolTip("Click to select shape '%s'" % shape.label)
                 self.setStatusTip(self.toolTip())
                 self.update()
@@ -98,7 +90,7 @@ class PreviewCanvas(QtWidgets.QWidget):
             if self.hShape:
                 self.hShape.highlightClear()
                 self.update()
-            self.hVertex, self.hShape, self.hEdge = None, None, None
+            self.hVertex, self.hShape = None, None
 
     def mousePressEvent(self, ev):
         if QT5:
@@ -106,13 +98,17 @@ class PreviewCanvas(QtWidgets.QWidget):
         else:
             pos = self.transformPos(ev.posF())
         # Transform pointer location by image offset
-        pos -= self.imagePos
+        pos -= self._imagePos
         if ev.button() == QtCore.Qt.LeftButton:
             group_mode = (int(ev.modifiers()) == QtCore.Qt.ControlModifier)
-            self.selectShapePoint(pos, multiple_selection_mode=group_mode)
+            if self.selectedVertex():  # A vertex is marked for selection.
+                index, shape = self.hVertex, self.hShape
+                shape.highlightVertex(index, shape.MOVE_VERTEX)
+                self.vertexSelected.emit()
+            self.select_shape(pos, multiple_selection_mode=group_mode)
             self.repaint()
 
-    def selectShapePoint(self, point, multiple_selection_mode):
+    def select_shape(self, point, multiple_selection_mode):
         """Select the first shape created which contains this point."""
         for shape in reversed(self.shapes):
             if not shape.containsPoint(point):
@@ -135,7 +131,7 @@ class PreviewCanvas(QtWidgets.QWidget):
             self.update()
 
     def paintEvent(self, event):
-        if not self.pixmap:
+        if not self._pixmap:
             return super(PreviewCanvas, self).paintEvent(event)
 
         p = self._painter
@@ -144,25 +140,25 @@ class PreviewCanvas(QtWidgets.QWidget):
         p.setRenderHint(QtGui.QPainter.HighQualityAntialiasing)
         p.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
 
-        p.scale(self.scale, self.scale)
+        p.scale(self._scale, self._scale)
         p.translate(self.offsetToCenter())
-        p.drawPixmap(self.imagePos, self.pixmap)
+        p.drawPixmap(self._imagePos, self._pixmap)
         # Translate by image position for all shapes
         # so that they move along
-        p.translate(self.imagePos)
-        Shape.scale = self.scale
+        p.translate(self._imagePos)
+        Shape.scale = self._scale
         for shape in self.shapes:
             shape.paint(p, fill=(shape in self.selected_shapes or shape == self.hShape))
         p.end()
 
     def transformPos(self, point):
         """Convert from widget-logical coordinates to painter-logical ones."""
-        return point / self.scale - self.offsetToCenter()
+        return point / self._scale - self.offsetToCenter()
 
     def offsetToCenter(self):
-        s = self.scale
+        s = self._scale
         area = super(PreviewCanvas, self).size()
-        w, h = self.pixmap.width() * s, self.pixmap.height() * s
+        w, h = self._pixmap.width() * s, self._pixmap.height() * s
         aw, ah = area.width(), area.height()
         x = (aw - w) / (2 * s) if aw > w else 0
         y = (ah - h) / (2 * s) if ah > h else 0
@@ -174,8 +170,8 @@ class PreviewCanvas(QtWidgets.QWidget):
         return self.minimumSizeHint()
 
     def minimumSizeHint(self):
-        if self.pixmap:
-            return self.scale * self.pixmap.size()
+        if self._pixmap:
+            return self._scale * self._pixmap.size()
         return super(PreviewCanvas, self).minimumSizeHint()
 
     def wheelEvent(self, ev):
@@ -206,15 +202,13 @@ class PreviewCanvas(QtWidgets.QWidget):
                 self.scrollRequest.emit(ev.delta(), QtCore.Qt.Horizontal)
         ev.accept()
 
-    def loadPixmap(self, pixmap):
-        self.pixmap = pixmap
-        self.shapes = []
+    def replace_and_focus_shape(self, shape: Shape, padding: float = 40.0):
+        shape_rect = shape.boundingRect()
+        shape_rect = shape_rect.adjusted(-padding, -padding, padding, padding)
+        rect_int = QtCore.QRect(*shape_rect.getRect())
+        self._pixmap = self._pixmap.copy(rect_int)
+        shape = shape.copy()
+        shape.moveBy(-rect_int.topLeft())
+        self.shapes = [shape]
         self.repaint()
-
-    def loadShapes(self, shapes, replace=True):
-        if replace:
-            self.shapes = list(shapes)
-        else:
-            self.shapes.extend(shapes)
-        self.storeShapes()
-        self.repaint()
+        return shape

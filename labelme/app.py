@@ -842,6 +842,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.uniqLabelList.findItems(text, Qt.MatchExactly):
             self.uniqLabelList.addItem(text)
             self.uniqLabelList.sortItems()
+        self.labelDialog.label_set()
 
     def fileSearchChanged(self):
         self.importDirImages(
@@ -969,7 +970,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if Config.get('display_label_popup') or not text:
             # instance label auto increment
             if Config.get('instance_label_auto_increment'):
-                previous_label = self.labelDialog.edit.text()
+                previous_label = self.labelDialog.last_label
                 split = previous_label.split('-')
                 if len(split) > 1 and split[-1].isdigit():
                     split[-1] = str(int(split[-1]) + 1)
@@ -978,9 +979,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     instance_text = previous_label
                 if instance_text != '':
                     text = instance_text
-            text, form = self.labelDialog.popUp(self.shapes[-1], text=text)
-            if text is None:
-                self.labelDialog.edit.setText(previous_label)
+            text, form = self.labelDialog.popUp(self.canvas.shapes[-1], text=text)
 
         if text and not self.validateLabel(text):
             self.errorMessage('Invalid label',
@@ -997,6 +996,7 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             self.canvas.undoLastLine()
             self.canvas.shapesBackups.pop()
+        self.labelDialog.label_set()
 
     def scrollRequest(self, delta, orientation):
         units = - delta * 0.1  # natural scroll

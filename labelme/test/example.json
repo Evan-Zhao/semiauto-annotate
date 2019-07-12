@@ -21,21 +21,26 @@
                 128
               ]
             },
-            "form": {
-              "__flags": {
-                "occluded": false,
-                "truncated": true
-              },
-              "__label": "lane",
-              "lane": {
-                "__flags": {
-                  "directions": "vertical",
-                  "line": "dotted"
+            "form": [
+              [
+                "lane",
+                {
+                  "occluded": false,
+                  "truncated": true
                 },
-                "__label": "crossing",
-                "crossing": null
-              }
-            },
+                null,
+                null
+              ],
+              [
+                "crossing",
+                {
+                  "directions": "vertical",
+                  "line": "solid"
+                },
+                null,
+                null
+              ]
+            ],
             "label": "lane",
             "line_color": {
               "py/tuple": [
@@ -47,33 +52,112 @@
             },
             "points": [
               {
-                "py/tuple": [
-                  640.1867728107778,
-                  430.99101857521947
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  186.0169491525424,
+                  413.5593220338983,
+                  null
                 ]
               },
               {
-                "py/tuple": [
-                  683.9065795740629,
-                  433.1649316186977
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  0.10000000000000142,
+                  497.1525423728813,
+                  null
                 ]
               },
               {
-                "py/tuple": [
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  0.0,
+                  532.2033898305085,
+                  null
+                ]
+              },
+              {
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  221.61016949152543,
+                  414.8305084745763,
+                  null
+                ]
+              }
+            ],
+            "shape_type": "polygon"
+          }
+        },
+        {
+          "py/object": "labelme.shape.Shape",
+          "py/state": {
+            "fill_color": {
+              "py/tuple": [
+                83,
+                55,
+                122,
+                128
+              ]
+            },
+            "form": [
+              [
+                "lane",
+                {
+                  "occluded": false,
+                  "truncated": true
+                },
+                null,
+                null
+              ],
+              [
+                "crossing",
+                {
+                  "directions": "vertical",
+                  "line": "solid"
+                },
+                null,
+                null
+              ]
+            ],
+            "label": "lane",
+            "line_color": {
+              "py/tuple": [
+                83,
+                55,
+                122,
+                128
+              ]
+            },
+            "points": [
+              {
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  639.4067796610169,
+                  432.20338983050846,
+                  null
+                ]
+              },
+              {
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  788.5593220338983,
+                  596.6101694915255,
+                  null
+                ]
+              },
+              {
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
                   800.0,
-                  534.5964500860797
+                  535.5932203389831,
+                  null
                 ]
               },
               {
-                "py/tuple": [
-                  800.0,
-                  600.0
-                ]
-              },
-              {
-                "py/tuple": [
-                  791.6360481730967,
-                  599.8315982853644
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  681.7796610169491,
+                  432.62711864406776,
+                  null
                 ]
               }
             ],
@@ -91,103 +175,26 @@
                 128
               ]
             },
-            "form": {
-              "__flags": {
-                "occluded": false,
-                "truncated": true
-              },
-              "__label": "lane",
-              "lane": {
-                "__flags": {
-                  "directions": "vertical",
-                  "line": "dotted"
+            "form": [
+              [
+                "lane",
+                {
+                  "occluded": false,
+                  "truncated": true
                 },
-                "__label": "crossing",
-                "crossing": null
-              }
-            },
-            "label": "lane",
-            "line_color": {
-              "py/tuple": [
-                83,
-                55,
-                122,
-                128
+                null,
+                null
+              ],
+              [
+                "crossing",
+                {
+                  "directions": "vertical",
+                  "line": "solid"
+                },
+                null,
+                null
               ]
-            },
-            "points": [
-              {
-                "py/tuple": [
-                  405.64571000884547,
-                  419.21463275682925
-                ]
-              },
-              {
-                "py/tuple": [
-                  446.95005783493247,
-                  420.18081633170846
-                ]
-              },
-              {
-                "py/tuple": [
-                  388.4959515547392,
-                  598.6832317906457
-                ]
-              },
-              {
-                "py/tuple": [
-                  349.1239708784107,
-                  597.9585941094862
-                ]
-              },
-              {
-                "py/tuple": [
-                  389.94522691705805,
-                  525.4948259935444
-                ]
-              },
-              {
-                "py/tuple": [
-                  390.18677281077777,
-                  477.6687390370225
-                ]
-              },
-              {
-                "py/tuple": [
-                  368.9307341634348,
-                  476.46100956842344
-                ]
-              }
             ],
-            "shape_type": "polygon"
-          }
-        },
-        {
-          "py/object": "labelme.shape.Shape",
-          "py/state": {
-            "fill_color": {
-              "py/tuple": [
-                83,
-                55,
-                122,
-                128
-              ]
-            },
-            "form": {
-              "__flags": {
-                "occluded": true,
-                "truncated": true
-              },
-              "__label": "lane",
-              "lane": {
-                "__flags": {
-                  "directions": "vertical",
-                  "line": "dotted"
-                },
-                "__label": "crossing",
-                "crossing": null
-              }
-            },
             "label": "lane",
             "line_color": {
               "py/tuple": [
@@ -199,27 +206,35 @@
             },
             "points": [
               {
-                "py/tuple": [
-                  182.7586206896552,
-                  413.262599469496
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  75.84745762711866,
+                  411.4406779661017,
+                  null
                 ]
               },
               {
-                "py/tuple": [
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
                   0.0,
-                  497.0690387912716
+                  440.2542372881356,
+                  null
                 ]
               },
               {
-                "py/tuple": [
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
                   0.0,
-                  532.3607427055704
+                  456.77966101694915,
+                  null
                 ]
               },
               {
-                "py/tuple": [
-                  220.15915119363396,
-                  416.44562334217505
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  114.52542372881355,
+                  412.18813559322024,
+                  null
                 ]
               }
             ],
@@ -237,85 +252,26 @@
                 128
               ]
             },
-            "form": {
-              "__flags": {
-                "occluded": false,
-                "truncated": true
-              },
-              "__label": "lane",
-              "lane": {
-                "__flags": {
-                  "directions": "vertical",
-                  "line": "dotted"
+            "form": [
+              [
+                "lane",
+                {
+                  "occluded": false,
+                  "truncated": true
                 },
-                "__label": "crossing",
-                "crossing": null
-              }
-            },
-            "label": "lane",
-            "line_color": {
-              "py/tuple": [
-                83,
-                55,
-                122,
-                128
+                null,
+                null
+              ],
+              [
+                "crossing",
+                {
+                  "directions": "vertical",
+                  "line": "solid"
+                },
+                null,
+                null
               ]
-            },
-            "points": [
-              {
-                "py/tuple": [
-                  80.37135278514589,
-                  410.61007957559684
-                ]
-              },
-              {
-                "py/tuple": [
-                  0.0,
-                  438.2789059442536
-                ]
-              },
-              {
-                "py/tuple": [
-                  0.0,
-                  456.763925729443
-                ]
-              },
-              {
-                "py/tuple": [
-                  116.18037135278516,
-                  413.7931034482759
-                ]
-              }
             ],
-            "shape_type": "polygon"
-          }
-        },
-        {
-          "py/object": "labelme.shape.Shape",
-          "py/state": {
-            "fill_color": {
-              "py/tuple": [
-                83,
-                55,
-                122,
-                128
-              ]
-            },
-            "form": {
-              "__flags": {
-                "occluded": false,
-                "truncated": true
-              },
-              "__label": "lane",
-              "lane": {
-                "__flags": {
-                  "directions": "vertical",
-                  "line": "dotted"
-                },
-                "__label": "crossing",
-                "crossing": null
-              }
-            },
             "label": "lane",
             "line_color": {
               "py/tuple": [
@@ -327,85 +283,35 @@
             },
             "points": [
               {
-                "py/tuple": [
-                  761.6843573518406,
-                  438.23739538681366
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  520.3389830508474,
+                  425.0,
+                  null
                 ]
               },
               {
-                "py/tuple": [
-                  799.6070626658503,
-                  466.4982649520311
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  547.457627118644,
+                  597.8813559322034,
+                  null
                 ]
               },
               {
-                "py/tuple": [
-                  799.8486085595702,
-                  438.7204871742533
-                ]
-              }
-            ],
-            "shape_type": "polygon"
-          }
-        },
-        {
-          "py/object": "labelme.shape.Shape",
-          "py/state": {
-            "fill_color": {
-              "py/tuple": [
-                83,
-                55,
-                122,
-                128
-              ]
-            },
-            "form": {
-              "__flags": {
-                "occluded": false,
-                "truncated": true
-              },
-              "__label": "lane",
-              "lane": {
-                "__flags": {
-                  "directions": "vertical",
-                  "line": "dotted"
-                },
-                "__label": "crossing",
-                "crossing": null
-              }
-            },
-            "label": "lane",
-            "line_color": {
-              "py/tuple": [
-                83,
-                55,
-                122,
-                128
-              ]
-            },
-            "points": [
-              {
-                "py/tuple": [
-                  522.0338983050848,
-                  424.1525423728813
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  640.6779661016949,
+                  599.5762711864407,
+                  null
                 ]
               },
               {
-                "py/tuple": [
-                  547.8192226205997,
-                  600.0
-                ]
-              },
-              {
-                "py/tuple": [
-                  636.8644067796611,
-                  600.0
-                ]
-              },
-              {
-                "py/tuple": [
-                  562.2881355932203,
-                  425.0
+                "py/object": "labelme.shape.LabeledPoint",
+                "py/state": [
+                  563.5593220338983,
+                  425.4237288135593,
+                  null
                 ]
               }
             ],
@@ -436,17 +342,26 @@
                 }
               ]
             },
-            "form": {
-              "__flags": {
-                "occluded": false,
-                "truncated": false
-              },
-              "__label": "person",
-              "person": null
-            },
+            "form": [
+              [
+                "person",
+                {
+                  "occluded": false,
+                  "truncated": false
+                },
+                null,
+                null
+              ],
+              [
+                null,
+                null,
+                null,
+                null
+              ]
+            ],
             "label": "person",
             "line_color": {
-              "py/id": 15
+              "py/id": 55
             },
             "sub_shapes": [
               {
@@ -461,12 +376,7 @@
                     ]
                   },
                   "form": {
-                    "__flags": {
-                      "occluded": false,
-                      "truncated": false
-                    },
-                    "__label": "person",
-                    "person": null
+                    "py/id": 56
                   },
                   "label": "person",
                   "line_color": {
@@ -479,45 +389,35 @@
                   },
                   "points": [
                     {
-                      "py/tuple": [
-                        341.1016949152543,
-                        151.6949152542373
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        341.9491525423729,
+                        163.55932203389833,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        328.38983050847463,
-                        183.05084745762713
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        312.2881355932203,
+                        209.3220338983051,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        321.6101694915255,
-                        209.74576271186442
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        311.01694915254234,
+                        504.66101694915255,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        333.4745762711865,
-                        271.6101694915256
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        334.32203389830516,
-                        302.9661016949154
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        324.15254237288144,
-                        476.27118644067804
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        320.3389830508475,
-                        502.11864406779665
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        338.5593220338983,
+                        514.406779661017,
+                        null
                       ]
                     }
                   ],
@@ -535,65 +435,23 @@
                       128
                     ]
                   },
-                  "form": {
-                    "__flags": {
-                      "occluded": false,
-                      "truncated": false
-                    },
-                    "__label": "person",
-                    "person": null
-                  },
-                  "label": "person",
-                  "line_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
+                  "form": [
+                    [
+                      "person",
+                      {
+                        "occluded": false,
+                        "truncated": false
+                      },
+                      null,
+                      null
+                    ],
+                    [
+                      null,
+                      null,
+                      null,
+                      null
                     ]
-                  },
-                  "points": [
-                    {
-                      "py/tuple": [
-                        333.0508474576272,
-                        209.3220338983051
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        444.91525423728825,
-                        200.84745762711864
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        460.59322033898314,
-                        174.5762711864407
-                      ]
-                    }
                   ],
-                  "shape_type": "linestrip"
-                }
-              },
-              {
-                "py/object": "labelme.shape.Shape",
-                "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "form": {
-                    "__flags": {
-                      "occluded": false,
-                      "truncated": false
-                    },
-                    "__label": "person",
-                    "person": null
-                  },
                   "label": "person",
                   "line_color": {
                     "py/tuple": [
@@ -605,21 +463,27 @@
                   },
                   "points": [
                     {
-                      "py/tuple": [
-                        372.88135593220346,
-                        226.27118644067804
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        329.66101694915255,
+                        209.74576271186442,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        419.9152542372882,
-                        266.94915254237304
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        443.22033898305085,
+                        202.11864406779662,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        436.8644067796611,
-                        287.2881355932205
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        464.8305084745763,
+                        174.5762711864407,
+                        null
                       ]
                     }
                   ],
@@ -653,17 +517,26 @@
                 }
               ]
             },
-            "form": {
-              "__flags": {
-                "occluded": false,
-                "truncated": false
-              },
-              "__label": "person",
-              "person": null
-            },
+            "form": [
+              [
+                "person",
+                {
+                  "occluded": false,
+                  "truncated": false
+                },
+                null,
+                null
+              ],
+              [
+                null,
+                null,
+                null,
+                null
+              ]
+            ],
             "label": "person",
             "line_color": {
-              "py/id": 24
+              "py/id": 82
             },
             "sub_shapes": [
               {
@@ -678,12 +551,7 @@
                     ]
                   },
                   "form": {
-                    "__flags": {
-                      "occluded": false,
-                      "truncated": false
-                    },
-                    "__label": "person",
-                    "person": null
+                    "py/id": 83
                   },
                   "label": "person",
                   "line_color": {
@@ -696,21 +564,43 @@
                   },
                   "points": [
                     {
-                      "py/tuple": [
-                        244.06779661016947,
-                        288.9830508474576
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        256.77966101694915,
+                        214.83050847457628,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        238.9830508474576,
-                        426.6949152542373
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        270.76271186440675,
+                        286.4406779661017,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        251.6949152542373,
-                        477.5423728813559
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        269.91525423728814,
+                        350.4237288135593,
+                        null
+                      ]
+                    },
+                    {
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        266.52542372881356,
+                        404.66101694915255,
+                        null
+                      ]
+                    },
+                    {
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        260.59322033898303,
+                        597.4576271186442,
+                        null
                       ]
                     }
                   ],
@@ -728,14 +618,23 @@
                       128
                     ]
                   },
-                  "form": {
-                    "__flags": {
-                      "occluded": false,
-                      "truncated": false
-                    },
-                    "__label": "person",
-                    "person": null
-                  },
+                  "form": [
+                    [
+                      "person",
+                      {
+                        "occluded": false,
+                        "truncated": false
+                      },
+                      null,
+                      null
+                    ],
+                    [
+                      null,
+                      null,
+                      null,
+                      null
+                    ]
+                  ],
                   "label": "person",
                   "line_color": {
                     "py/tuple": [
@@ -747,33 +646,35 @@
                   },
                   "points": [
                     {
-                      "py/tuple": [
-                        267.3728813559322,
-                        213.55932203389833
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        238.5593220338983,
+                        281.77966101694915,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        267.79661016949154,
-                        280.50847457627117
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        233.47457627118644,
+                        399.5762711864407,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        274.5762711864407,
-                        403.3898305084746
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        252.1186440677966,
+                        461.0169491525424,
+                        null
                       ]
                     },
                     {
-                      "py/tuple": [
-                        276.271186440678,
-                        506.77966101694915
-                      ]
-                    },
-                    {
-                      "py/tuple": [
-                        266.10169491525426,
-                        587.2881355932204
+                      "py/object": "labelme.shape.LabeledPoint",
+                      "py/state": [
+                        258.0508474576271,
+                        498.728813559322,
+                        null
                       ]
                     }
                   ],

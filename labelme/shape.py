@@ -2,6 +2,7 @@ import copy
 import math
 
 from qtpy import QtCore
+from qtpy.QtCore import QPointF
 from qtpy import QtGui
 
 import labelme.utils
@@ -73,6 +74,45 @@ class BezierB:
         return self.points
 
 
+class LabeledPoint:
+    def __init__(self, qpoint_f: QPointF, label=None):
+        self.point = qpoint_f
+        self.label = label
+
+    def __getattr__(self, item):
+        if item in {'x', 'y'}:
+            return getattr(self.point, item)
+        raise AttributeError(item)
+
+    @classmethod
+    def from_xy(cls, x: float, y: float, label=None):
+        return cls(QPointF(x, y), label=label)
+
+    def __add__(self, other: QPointF):
+        return LabeledPoint(self.point + other, label=self.label)
+
+    def __iadd__(self, other: QPointF):
+        self.point += other
+        return self
+
+    def __sub__(self, other: QPointF):
+        return LabeledPoint(self.point - other, label=self.label)
+
+    def __eq__(self, other):
+        return self.point == other.point
+
+    def __repr__(self):
+        return f'LabeledPoint({self.x()}, {self.y()}, label={self.label})'
+
+    def __getstate__(self):
+        return [self.x(), self.y(), self.label]
+
+    def __setstate__(self, state):
+        x, y, label = state
+        self.point = QPointF(x, y)
+        self.label = label
+
+
 class Shape(object):
     P_SQUARE, P_ROUND = 0, 1
 
@@ -88,7 +128,7 @@ class Shape(object):
     point_type = P_ROUND
     point_size = 8
     scale = 1.0
-
+    _text_font = QtGui.QFont('Helvetica', 10)
     all_types = ['polygon', 'rectangle', 'point', 'line', 'circle', 'linestrip', 'curve', 'freeform']
     must_close = ['polygon', 'rectangle', 'point', 'line', 'circle']
     manual_close = ['polygon', 'curve', 'freeform']
@@ -96,11 +136,12 @@ class Shape(object):
     def __init__(self, label=None, line_color=None, shape_type=None, init_point=None):
         self.label = label
         self.form = None
+        # Points is a list of LabeledPoint, cursor point is a LabeledPoint.
         self._points = []
         self._cursor_point = None
         if init_point:
-            self._points.append(init_point)
-            self._cursor_point = init_point
+            self._points.append(LabeledPoint(init_point))
+            self._cursor_point = LabeledPoint(init_point)
         self.shape_type = shape_type
 
         self._highlightIndex = None
@@ -122,7 +163,7 @@ class Shape(object):
         self.shape_type = shape_type
 
     @classmethod
-    def from_list(cls, lst, **kwargs):
+    def from_points(cls, lst, **kwargs):
         inst = cls(**kwargs)
         inst._points = lst
         return inst
@@ -175,11 +216,11 @@ class Shape(object):
             self._polygon_closed = True
         else:
             self._points.append(self._cursor_point)
-        self._cursor_point = cursor_point
+        self._cursor_point = LabeledPoint(cursor_point) if cursor_point else None
 
     def update_cursor(self, value):
         assert self._cursor_point is not None
-        self._cursor_point = value
+        self._cursor_point.point = value
 
     def undo_point(self, forced=False):
         if self._polygon_closed:
@@ -195,7 +236,7 @@ class Shape(object):
             return False
 
     def insertPoint(self, i, point):
-        self._points.insert(i, point)
+        self._points.insert(i, LabeledPoint(point))
 
     def is_empty(self):
         return not self._points
@@ -212,7 +253,8 @@ class Shape(object):
         def drawVertex(path, idx):
             d = self.point_size / self.scale
             shape = self.point_type
-            point = actual_points[idx]
+            labeled_point = actual_points[idx]
+            point, label = labeled_point.point, labeled_point.label
             if idx == self._highlightIndex:
                 size, shape = self._highlightSettings[self._highlightMode]
                 d *= size
@@ -226,6 +268,8 @@ class Shape(object):
                 path.addEllipse(point, d / 2.0, d / 2.0)
             else:
                 assert False, 'unsupported vertex shape'
+            if label is not None:
+                path.addText(point, Shape._text_font, str(label))
 
         def draw_vertices(painter):
             vrtx_path = QtGui.QPainterPath()
@@ -249,36 +293,36 @@ class Shape(object):
             rectangle = self.getCircleRectFromLine(actual_points)
             single_line_path.addEllipse(rectangle)
         elif self.shape_type == 'linestrip' and self._points:
-            line_path1.moveTo(self._points[0])
+            line_path1.moveTo(self._points[0].point)
             for p in self._points:
-                line_path1.lineTo(p)
+                line_path1.lineTo(p.point)
             if self._cursor_point:
-                line_path2.moveTo(self._points[-1])
-                line_path2.lineTo(self._cursor_point)
+                line_path2.moveTo(self._points[-1].point)
+                line_path2.lineTo(self._cursor_point.point)
         elif self.shape_type == 'curve' and self._points:
             # Paint Bezier curve across given points.
             refined_points = BezierB(actual_points).smooth()
             if self._cursor_point:
-                sep_idx = refined_points.index(self._points[-1])
-                line_path1.moveTo(refined_points[0])
+                sep_idx = refined_points.index(self._points[-1].point)
+                line_path1.moveTo(refined_points[0].point)
                 for p in refined_points[:sep_idx]:
-                    line_path1.lineTo(p)
-                line_path2.moveTo(refined_points[sep_idx])
+                    line_path1.lineTo(p.point)
+                line_path2.moveTo(refined_points[sep_idx].point)
                 for p in refined_points[sep_idx:]:
-                    line_path2.lineTo(p)
+                    line_path2.lineTo(p.point)
             else:
                 line_path1.moveTo(refined_points[0])
                 for p in refined_points:
                     line_path1.lineTo(p)
         elif self._points:
-            line_path1.moveTo(actual_points[0])
+            line_path1.moveTo(actual_points[0].point)
             for p in actual_points:
-                line_path1.lineTo(p)
+                line_path1.lineTo(p.point)
             if self._cursor_point:
-                line_path2.moveTo(self._points[-1])
-                line_path2.lineTo(self._cursor_point)
+                line_path2.moveTo(self._points[-1].point)
+                line_path2.lineTo(self._cursor_point.point)
             elif self.closed:
-                line_path1.lineTo(actual_points[0])
+                line_path1.lineTo(actual_points[0].point)
 
         painter.drawPath(line_path1)
         painter.setPen(pen2)
@@ -334,9 +378,9 @@ class Shape(object):
                 rectangle = self.getCircleRectFromLine(self._points)
                 path.addEllipse(rectangle)
         else:
-            path = QtGui.QPainterPath(self._points[0])
+            path = QtGui.QPainterPath(self._points[0].point)
             for p in self._points[1:]:
-                path.lineTo(p)
+                path.lineTo(p.point)
         return path
 
     def boundingRect(self):
@@ -355,6 +399,9 @@ class Shape(object):
     def highlightClear(self):
         self._highlightIndex = None
 
+    def set_vertex_label(self, idx, label):
+        self._points[idx].label = label
+
     def copy(self):
         return copy.deepcopy(self)
 
@@ -363,7 +410,7 @@ class Shape(object):
             label=self.label.encode('utf-8') if PY2 else self.label,
             line_color=self.line_color.getRgb(),
             fill_color=self.fill_color.getRgb(),
-            points=[(p.x(), p.y()) for p in self._points],
+            points=self._points,
             shape_type=self.shape_type,
             form=self.form
         )
@@ -373,7 +420,10 @@ class Shape(object):
         self.label = state['label']
         self.line_color = QtGui.QColor(*state['line_color'])
         self.fill_color = QtGui.QColor(*state['fill_color'])
-        self._points = [QtCore.QPointF(*p) for p in state['points']]
+        if type(state['points'][0]) is tuple:
+            self._points = [LabeledPoint.from_xy(*p) for p in state['points']]
+        else:
+            self._points = state['points']
         self.shape_type = state['shape_type']
         self.form = state['form']
 
@@ -422,16 +472,16 @@ class MultiShape:
             'nearestVertex', 'nearestEdge', 'makePath', 'containsPoint', 'boundingRect',
             'MOVE_VERTEX', 'NEAR_VERTEX'
         }
-        self._dummy_shape = Shape.from_list(self._points)
+        self._dummy_shape = Shape.from_points(self._points)
         self.label = shapes[0].label if shapes else None
         self.line_color = shapes[0].line_color if shapes else None
         self.fill_color = self.line_color
-        self.form = None
+        self.form = shapes[0].form if shapes else None
 
     def __getattr__(self, item):
         if item in self._dispatchable:
             return getattr(self._dummy_shape, item)
-        raise AttributeError(item)
+        return None
 
     def copy(self):
         return copy.deepcopy(self)
@@ -446,10 +496,10 @@ class MultiShape:
         painter.setPen(pen)
         path = QtGui.QPainterPath()
         for s1, s2 in zip(self._shapes, self._shapes[1:]):
-            path.moveTo(s1[0])
-            path.lineTo(s2[0])
-            path.moveTo(s1[-1])
-            path.lineTo(s2[-1])
+            path.moveTo(s1[0].point)
+            path.lineTo(s2[0].point)
+            path.moveTo(s1[-1].point)
+            path.lineTo(s2[-1].point)
         painter.drawPath(path)
 
     def highlightVertex(self, i, action):
@@ -461,6 +511,11 @@ class MultiShape:
         """Clear highlight of ALL sub-shapes."""
         for s in self._shapes:
             s.highlightClear()
+
+    def set_vertex_label(self, i, label):
+        """Send label vertex index to the shape it belongs in."""
+        shape, i = self._point_indexer.get_shape_and_index(i)
+        shape.set_vertex_label(i, label)
 
     def moveBy(self, offset):
         self._dummy_shape.moveBy(offset)

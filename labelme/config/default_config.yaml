@@ -53,8 +53,7 @@ labels:
     double white: null
     crossing: null
 
-point_labels:
-  person: [右肩, 右肘, 右腕, 左肩, 左肘, 左腕, 右髋, 右膝, 右踝, 左髋, 左膝, 左踝, 头顶, 脖子]
+point_labels: [右肩, 右肘, 右腕, 左肩, 左肘, 左腕, 右髋, 右膝, 右踝, 左髋, 左膝, 左踝, 头顶, 脖子]
 
 label_color:
   bike: 0x80FFB300 # Vivid Yellow

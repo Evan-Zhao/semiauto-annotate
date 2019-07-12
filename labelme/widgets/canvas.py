@@ -23,7 +23,7 @@ class Canvas(QtWidgets.QWidget):
     zoomRequest = QtCore.Signal(int, QtCore.QPointF)
     scrollRequest = QtCore.Signal(int, int)
     newShape = QtCore.Signal()
-    mergeShape = QtCore.Signal(list, Shape)
+    mergeShape = QtCore.Signal(list, MultiShape)
     selectionChanged = QtCore.Signal()
     shapeMoved = QtCore.Signal()
     drawingPolygon = QtCore.Signal(bool)
@@ -37,8 +37,8 @@ class Canvas(QtWidgets.QWidget):
 
     def __init__(self, *args, **kwargs):
         # Configs
-        self.epsilon = Config.get('epsilon', default=10.0)
-        self.label_color = Config.get('label_color')
+        self._epsilon = Config.get('epsilon', default=10.0)
+        self._label_color = Config.get('label_color')
         super(Canvas, self).__init__(*args, **kwargs)
         # Initialise local state.
         self._image_file = None
@@ -185,8 +185,8 @@ class Canvas(QtWidgets.QWidget):
             for shape in reversed([s for s in self.shapes if self.isCanvasVisible(s)]):
                 # Look for a nearby vertex to highlight. If that fails,
                 # check if we happen to be inside a shape.
-                index = shape.nearestVertex(p, self.epsilon / self.scale)
-                index_edge = shape.nearestEdge(p, self.epsilon / self.scale)
+                index = shape.nearestVertex(p, self._epsilon / self.scale)
+                index_edge = shape.nearestEdge(p, self._epsilon / self.scale)
                 if index is not None:
                     if self.selectedVertex():
                         self._hShape.highlightClear()
@@ -553,7 +553,7 @@ class Canvas(QtWidgets.QWidget):
         # m = (p1-p2).manhattanLength()
         # print "d %.2f, m %d, %.2f" % (d, m, d - m)
         # divide by scale to allow more precision when zoomed in
-        return labelme.utils.distance(p1 - p2) < (self.epsilon / self.scale)
+        return labelme.utils.distance(p1 - p2) < (self._epsilon / self.scale)
 
     def intersectionPoint(self, p1, p2):
         # Cycle through each image edge in clockwise fashion,
@@ -662,7 +662,7 @@ class Canvas(QtWidgets.QWidget):
 
         shape.label = text
         shape.form = form
-        shape.line_color = shape.fill_color = argbToQColor(self.label_color[text])
+        shape.line_color = shape.fill_color = argbToQColor(self._label_color[text])
 
     def setLastLabel(self, text, form):
         self.setLabelFor(self.shapes[-1], text, form)
