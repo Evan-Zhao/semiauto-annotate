@@ -148,4 +148,3 @@ if __name__ == '__main__':
     """
     print("Image detection mode")
     detect_img(YOLO(**vars(FLAGS)), FLAGS.input, FLAGS.output)
-

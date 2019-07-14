@@ -138,13 +138,13 @@ def pose_detection(input, output_path):
         print('At scale %d, The CNN took %.2f ms.' % (m, 1000 * (time.time() - start_time)))
 
         # extract outputs, resize, and remove padding
-        heatmap = np.transpose(np.squeeze(net.blobs[list(output_blobs.keys())[1]].data),
+        heatmap = np.transpose(np.squeeze(net.blobs['Mconv7_stage6_L2'].data),
                                (1, 2, 0))  # output 1 is heatmaps
         heatmap = cv.resize(heatmap, (0, 0), fx=model['stride'], fy=model['stride'], interpolation=cv.INTER_CUBIC)
         heatmap = heatmap[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3], :]
         heatmap = cv.resize(heatmap, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv.INTER_CUBIC)
 
-        paf = np.transpose(np.squeeze(net.blobs[list(output_blobs.keys())[0]].data), (1, 2, 0))  # output 0 is PAFs
+        paf = np.transpose(np.squeeze(net.blobs['Mconv7_stage6_L1'].data), (1, 2, 0))  # output 0 is PAFs
         paf = cv.resize(paf, (0, 0), fx=model['stride'], fy=model['stride'], interpolation=cv.INTER_CUBIC)
         paf = paf[:imageToTest_padded.shape[0] - pad[2], :imageToTest_padded.shape[1] - pad[3], :]
         paf = cv.resize(paf, (oriImg.shape[1], oriImg.shape[0]), interpolation=cv.INTER_CUBIC)
@@ -228,11 +228,12 @@ def pose_detection(input, output_path):
             (map >= map_left, map >= map_right, map >= map_up, map >= map_down, map > param['thre1']))
         peaks = zip(np.nonzero(peaks_binary)[1], np.nonzero(peaks_binary)[0])  # note reverse
         peaks_with_score = [x + (map_ori[x[1], x[0]],) for x in peaks]
-        id = range(peak_counter, peak_counter + len(peaks))
+        len_peaks = len(peaks_with_score)
+        id = range(peak_counter, peak_counter + len_peaks)
         peaks_with_score_and_id = [peaks_with_score[i] + (id[i],) for i in range(len(id))]
 
         all_peaks.append(peaks_with_score_and_id)
-        peak_counter += len(peaks)
+        peak_counter += len_peaks
 
     # find connection in the specified sequence, center 29 is in the position 15
     limbSeq = [[2, 3], [2, 6], [3, 4], [4, 5], [6, 7], [7, 8], [2, 9], [9, 10], \
@@ -262,9 +263,10 @@ def pose_detection(input, output_path):
                     norm = math.sqrt(vec[0] * vec[0] + vec[1] * vec[1])
                     vec = np.divide(vec, norm)
 
-                    startend = zip(np.linspace(candA[i][0], candB[j][0], num=mid_num), \
-                                   np.linspace(candA[i][1], candB[j][1], num=mid_num))
-
+                    startend = list(zip(
+                        np.linspace(candA[i][0], candB[j][0], num=mid_num),
+                        np.linspace(candA[i][1], candB[j][1], num=mid_num)
+                    ))
                     vec_x = np.array([score_mid[int(round(startend[I][1])), int(round(startend[I][0])), 0] \
                                       for I in range(len(startend))])
                     vec_y = np.array([score_mid[int(round(startend[I][1])), int(round(startend[I][0])), 1] \
