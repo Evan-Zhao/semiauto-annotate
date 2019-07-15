@@ -72,6 +72,8 @@ class UILabelDialog(object):
     _placeholder = 'Enter object label'
 
     def __init__(self, labels, parent_dialog):
+        from labelme.utils import Config
+
         self.splitter = QtWidgets.QSplitter()
         self.spec = MultiLevelDict(labels)
         self.parent_dialog = parent_dialog
@@ -79,6 +81,10 @@ class UILabelDialog(object):
         self._using_dialog_box = False
         # Turns off slot response
         self.setting_state = False
+        fit_to_content = Config.get('fit_to_content')
+        self.fit_row, self.fit_column = False, True
+        if fit_to_content:
+            self.fit_row, self.fit_column = fit_to_content['row'], fit_to_content['column']
 
     @staticmethod
     def make_empty_group_box(parent):
@@ -240,10 +246,13 @@ class UILabelDialog(object):
     def get_keys_from_label_dict(label_dict):
         return list(set(label_dict.keys()) - {UILabelDialog._flags})
 
+    @property
+    def group_boxes(self):
+        return self.boxes[:-1] if self._using_dialog_box else self.boxes
+
     def get_texts_selected(self) -> list:
         all_selected = []
-        group_boxes = self.boxes[:-1] if self._using_dialog_box else self.boxes
-        for level in group_boxes:
+        for level in self.group_boxes:
             label_list = self.get_list_from_box(level)
             selected_item = label_list.currentItem()
             if selected_item is None:
@@ -273,13 +282,11 @@ class UILabelDialog(object):
             return ret
 
         ret = []
-        # Don't read 2 button boxes in the for loop.
-        group_boxes = self.boxes[:-1] if self._using_dialog_box else self.boxes
         all_sel = self.get_texts_selected()
-        if len(all_sel) < len(group_boxes):
+        if len(all_sel) < len(self.group_boxes):
             # Some label list has no selection.
             return None
-        for level, box in enumerate(group_boxes):
+        for level, box in enumerate(self.group_boxes):
             box = self.boxes[level]
             parent_selected = all_sel[:level]
             level_spec = self.spec[parent_selected]
@@ -305,6 +312,30 @@ class UILabelDialog(object):
     def get_first_label_from_state(state):
         return state[0][0]
 
+    def set_size(self):
+        def get_min_width_for_box(box):
+            label_list = self.get_list_from_box(box)
+            return label_list.sizeHintForColumn(0) * 2
+
+        def get_min_height_for_box(box):
+            total_suggested = box.sizeHint().height()
+            label_list = self.get_list_from_box(box)
+            label_list_suggested = label_list.sizeHint().height()
+            label_list_actual = label_list.sizeHintForRow(0) * label_list.count() * 1.5
+            return total_suggested - label_list_suggested + label_list_actual
+
+        if self.fit_row:
+            total_width = sum(
+                get_min_width_for_box(box) for box in self.group_boxes
+            )
+            if self._using_dialog_box:
+                total_width += 100
+            self.parent_dialog.setMinimumWidth(total_width)
+        if self.fit_column:
+            heights = [get_min_height_for_box(box) for box in self.group_boxes] + [0]
+            max_height = max(heights)
+            self.parent_dialog.setMinimumHeight(max_height)
+
     def clear_layout_down_to(self, level):
         def clear_box(box):
             layout = box.layout()
@@ -320,6 +351,7 @@ class UILabelDialog(object):
             sip.delete(box)
         self.boxes = self.boxes[:level + 1]
         self._using_dialog_box = False
+        self.set_size()
 
     def find_box(self, box):
         return self.boxes.index(box)
@@ -355,6 +387,7 @@ class UILabelDialog(object):
         self.splitter.addWidget(group_box)
         # Works even when level == -1, when self.boxes is empty.
         self.boxes = self.boxes[:level + 1] + [group_box]
+        self.set_size()
 
     def init_ui(self):
         layout = QtWidgets.QVBoxLayout(self.parent_dialog)
@@ -415,24 +448,6 @@ class LabelDialog(QtWidgets.QDialog):
     @property
     def last_label(self):
         return self._last_label or ''
-
-    # def make_group_box(self, labels, bindings):
-    #     bindings['__label'] = (
-    #         lambda lst=label_list: LabelDialog.get_label_list_selected(lst),
-    #         lambda val, lst=label_list: self.set_label_list_selected(lst, val)
-    #     )
-    #     bindings['__flags'] = self.make_flags_on(flags_box, flags)
-    #     # Adjust dialog size
-    #     if self._fit_to_content['column']:
-    #         total_width = sum(
-    #             LabelDialog.get_min_width_for_box(box) for box in self._boxes
-    #         )
-    #         self.setMinimumWidth(total_width)
-    #     if self._fit_to_content['row']:
-    #         max_height = max(
-    #             LabelDialog.get_min_height_for_box(box) for box in self._boxes
-    #         )
-    #         self.setMinimumHeight(max_height)
 
     @staticmethod
     def get_min_width_for_box(box):
