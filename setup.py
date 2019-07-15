@@ -35,7 +35,14 @@ install_requires = [
     'PyYAML',
     'qtpy',
     'termcolor',
-    'jsonpickle', 'sip'
+    'jsonpickle',
+    'scipy',
+    'opencv',
+    'configobj',
+    'keras',
+    'tensorflow',
+    'caffe',
+    'sip'
 ]
 
 # Find python binding for qt with priority:

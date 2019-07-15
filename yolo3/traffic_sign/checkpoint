@@ -1,0 +1,2 @@
+model_checkpoint_path: "/home/joezhong/keras-yolo3-master/traffic_sign/early_stopping_checkpoint"
+all_model_checkpoint_paths: "/home/joezhong/keras-yolo3-master/traffic_sign/early_stopping_checkpoint"

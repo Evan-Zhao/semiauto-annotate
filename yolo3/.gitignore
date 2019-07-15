@@ -1,0 +1,6 @@
+# Dataset files
+traffic_sign/traffic-signs-data
+traffic_sign/models
+
+# yolo output
+*.json
