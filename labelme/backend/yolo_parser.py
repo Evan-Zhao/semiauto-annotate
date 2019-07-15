@@ -27,9 +27,7 @@ class YoloParser(object):
         loc = val.location
         points = [
             QPointF(loc.left, loc.top),
-            QPointF(loc.right, loc.top),
-            QPointF(loc.right, loc.bottom),
-            QPointF(loc.left, loc.bottom)
+            QPointF(loc.right, loc.bottom)
         ]
         points = [LabeledPoint(p) for p in points]
         return Shape.from_points(
