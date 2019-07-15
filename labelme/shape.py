@@ -109,6 +109,7 @@ class Shape(object):
     hvertex_fill_color = DEFAULT_HVERTEX_FILL_COLOR
     point_type = P_ROUND
     point_size = 8
+    line_width = 4.0
     scale = 1.0
     _text_font = QtGui.QFont('Helvetica', 10)
     all_types = ['polygon', 'rectangle', 'point', 'line', 'circle', 'linestrip', 'curve', 'freeform']
@@ -269,7 +270,7 @@ class Shape(object):
 
         pen1, pen2 = QtGui.QPen(self.line_color), QtGui.QPen(self.last_line_color)
         # Try using integer sizes for smoother drawing(?)
-        pen1.setWidth(max(1, int(round(2.0 / self.scale))))
+        pen1.setWidth(max(1, int(round(self.line_width / self.scale))))
         painter.setPen(pen1)
         draw_vertices(painter)
 
@@ -479,8 +480,7 @@ class MultiShape:
         for s in self._shapes:
             s.paint(painter, fill)
         pen = QtGui.QPen(self.line_color)
-        # Wider line than shape itself
-        pen.setWidth(max(1, int(round(4.0 / Shape.scale))))
+        pen.setWidth(max(1, int(round(2.0 / Shape.scale))))
         pen.setStyle(QtCore.Qt.DashLine)
         painter.setPen(pen)
         path = QtGui.QPainterPath()
