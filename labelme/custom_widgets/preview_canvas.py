@@ -222,7 +222,7 @@ class PreviewCanvas(QtWidgets.QWidget):
                 self.scrollRequest.emit(ev.delta(), QtCore.Qt.Horizontal)
         ev.accept()
 
-    def replace_and_focus_shape(self, shape: Shape, padding: float = 20.0):
+    def replace_and_focus_shape(self, shape: Shape, padding: float = 40.0):
         shape_rect = shape.boundingRect()
         scale = self.compute_scale(self._scale, shape_rect.width(), shape_rect.height())
         pd = padding / scale

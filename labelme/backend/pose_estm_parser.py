@@ -4,13 +4,12 @@ from labelme.shape import Shape, MultiShape, LabeledPoint
 class PoseEstmParser(object):
     n_pose_points = 18
     body_chains = [
-        [1, 2],
-        [5, 1, 8, 9, 10],
+        [1, 8, 9, 10],
         [4, 3, 2, 16, 14, 0, 15, 17, 5, 6, 7],
-        [13, 12, 11, 1, 0]
+        [13, 12, 11]
     ]
     shape_label = 'person'
-    shape_form = ('person', None, None, None)
+    shape_form = [['person', None, None, None]]
     shape_type = 'linestrip'
 
     def __init__(self, filename):
@@ -38,12 +37,12 @@ class PoseEstmParser(object):
             pose_parsed = []
             self.assert_and_raise(type(pose) is list)
             self.assert_and_raise(len(pose) == self.n_pose_points)
-            for p in pose:
+            for i, p in enumerate(pose):
                 if p == -1:
                     pose_parsed.append(None)
                     continue
                 self.assert_and_raise(type(p) is list and len(p) == 2)
-                pose_parsed.append(LabeledPoint(x=p[0], y=p[1]))
+                pose_parsed.append(LabeledPoint(x=p[0], y=p[1], label=i))
             ret.append(pose_parsed)
         return ret
 
@@ -71,4 +70,5 @@ class PoseEstmParser(object):
                 label=PoseEstmParser.shape_label,
                 shape_type=PoseEstmParser.shape_type
             ))
-        return MultiShape(shapes)
+        multi_shape = MultiShape(shapes)
+        return multi_shape

@@ -111,13 +111,12 @@ class Shape(object):
     point_size = 8
     line_width = 4.0
     scale = 1.0
-    _text_font = QtGui.QFont('Helvetica', 24)
     all_types = ['polygon', 'rectangle', 'point', 'line', 'circle', 'linestrip', 'curve', 'freeform']
     must_close = ['polygon', 'rectangle', 'point', 'line', 'circle']
     manual_close = ['polygon', 'curve', 'freeform']
 
-    def __init__(self, label=None, shape_type=None, init_point=None):
-        self.form = None
+    def __init__(self, form=None, label=None, shape_type=None, init_point=None):
+        self.form = form
         # Points is a list of LabeledPoint, cursor point is a LabeledPoint.
         self._points = []
         self._cursor_point = None
@@ -197,6 +196,10 @@ class Shape(object):
     def last_line_color(self):
         return self.line_color if self.closed else DEFAULT_LAST_LINE_COLOR
 
+    @staticmethod
+    def get_paint_font(scale):
+        return QtGui.QFont('Helvetica', 18 / scale)
+
     def finalize(self):
         self._cursor_point = None
 
@@ -259,7 +262,7 @@ class Shape(object):
             else:
                 assert False, 'unsupported vertex shape'
             if label is not None:
-                path.addText(point, Shape._text_font, str(label))
+                path.addText(point, self.get_paint_font(self.scale), str(label))
 
         def draw_vertices(painter):
             vrtx_path = QtGui.QPainterPath()
@@ -466,7 +469,7 @@ class MultiShape:
         self.label = shapes[0].label if shapes else None
         self.line_color = shapes[0].line_color if shapes else None
         self.fill_color = self.line_color
-        self.form = shapes[0].form if shapes else None
+        self.form = [[self.label, None, None, self.get_annotation_result()]] if shapes else None
 
     def __getattr__(self, item):
         if item in self._dispatchable:
@@ -515,6 +518,9 @@ class MultiShape:
         self._dummy_shape.moveVertexBy(i, offset)
         shape, i = self._point_indexer.get_shape_and_index(i)
         shape.moveVertexBy(i, offset)
+
+    def get_annotation_result(self):
+        return {i: p.label for i, p in enumerate(self._points)}
 
     def __getstate__(self):
         return dict(

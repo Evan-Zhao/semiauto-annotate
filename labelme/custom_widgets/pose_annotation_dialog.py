@@ -36,8 +36,11 @@ class PoseAnnotationDialog(QtWidgets.QDialog):
         super(PoseAnnotationDialog, self).__init__(parent_canvas)
         self.ui = UIPoseAnnotationDialog()
         self.ui.setupUi(self)
-        self._point_labels = Config.get('point_labels', [])
-        self._point_labels = [f'{str(i)}: {l}' for i, l in enumerate(self._point_labels)]
+        # Results
+        self.point_idx_to_label = selected_shape.get_annotation_result()
+        self.label_to_point_idx = {v: k for k, v in self.point_idx_to_label.items()}
+        raw_labels = Config.get('point_labels', [])
+        self._point_labels = [self.get_label_list_text(i, l) for i, l in enumerate(raw_labels)]
         # Label list
         self.label_list = label_list = self.ui.point_label_list
         label_list.addItems(self._point_labels)
@@ -47,8 +50,13 @@ class PoseAnnotationDialog(QtWidgets.QDialog):
         # Returns a copy of the shape (which we'll modify later)
         self.selected_shape = canvas.replace_and_focus_shape(selected_shape)
         canvas.vertexSelected.connect(self.on_vertex_selected)
-        # Results
-        self.point_idx_to_label = {}
+
+    def get_label_list_text(self, label_idx, label_str):
+        base_str = f'{str(label_idx)}: {label_str}'
+        if label_idx in self.label_to_point_idx:
+            vertex_idx = self.label_to_point_idx[label_idx]
+            base_str += f' -> Point {vertex_idx}'
+        return base_str
 
     def on_vertex_selected(self) -> None:
         """
