@@ -6,6 +6,7 @@ from qtpy.QtCore import QPointF
 from qtpy import QtGui
 
 import labelme.utils
+from labelme.utils import Config
 from labelme import PY2
 
 # TODO(unknown):
@@ -133,16 +134,17 @@ class Shape(object):
     must_close = ['polygon', 'rectangle', 'point', 'line', 'circle']
     manual_close = ['polygon', 'curve', 'freeform']
 
-    def __init__(self, label=None, line_color=None, shape_type=None, init_point=None):
-        self.label = label
+    def __init__(self, label=None, shape_type=None, init_point=None):
         self.form = None
         # Points is a list of LabeledPoint, cursor point is a LabeledPoint.
         self._points = []
         self._cursor_point = None
+        self._label_color = Config.get('label_color')
         if init_point:
             self._points.append(LabeledPoint(init_point))
             self._cursor_point = LabeledPoint(init_point)
         self.shape_type = shape_type
+        self.label = label
 
         self._highlightIndex = None
         self._highlightMode = self.NEAR_VERTEX
@@ -152,19 +154,11 @@ class Shape(object):
         }
 
         self._polygon_closed = False
-
-        if line_color is not None:
-            # Override the class line_color attribute
-            # with an object attribute. Currently this
-            # is used for drawing the pending line a different color.
-            self.line_color = line_color
-
-        self.cursor_line_color = self.line_color
         self.shape_type = shape_type
 
     @classmethod
-    def from_points(cls, lst, **kwargs):
-        inst = cls(**kwargs)
+    def from_points(cls, lst, *args, **kwargs):
+        inst = cls(*args, **kwargs)
         inst._points = lst
         return inst
 
@@ -179,6 +173,20 @@ class Shape(object):
         if value not in self.all_types:
             raise ValueError('Unexpected shape_type: {}'.format(value))
         self._shape_type = value
+
+    @property
+    def label(self):
+        return self._label
+
+    @label.setter
+    def label(self, value):
+        def argb_to_q_color(val):
+            hexStr = hex(val)[2:]
+            a, r, g, b = tuple(int(hexStr[i:i + 2], 16) for i in (0, 2, 4, 6))
+            return QtGui.QColor(r, g, b, a)
+        self._label = value
+        if value in self._label_color:
+            self.line_color = self.fill_color = argb_to_q_color(self._label_color[value])
 
     @property
     def closed(self):
@@ -407,7 +415,7 @@ class Shape(object):
 
     def __getstate__(self):
         return dict(
-            label=self.label.encode('utf-8') if PY2 else self.label,
+            label=self._label.encode('utf-8') if PY2 else self._label,
             line_color=self.line_color.getRgb(),
             fill_color=self.fill_color.getRgb(),
             points=self._points,
@@ -417,7 +425,7 @@ class Shape(object):
 
     def __setstate__(self, state):
         self.__init__()
-        self.label = state['label']
+        self._label = state['label']
         self.line_color = QtGui.QColor(*state['line_color'])
         self.fill_color = QtGui.QColor(*state['fill_color'])
         if type(state['points'][0]) is tuple:
@@ -431,16 +439,16 @@ class Shape(object):
         return len(self._points)
 
     def __getitem__(self, key):
-        return self._points[key]
+        return self._points[key].point
 
     def __setitem__(self, key, value):
-        self._points[key] = value
+        self._points[key].point = value
 
 
 class MultiShape:
     class PointIndexer:
         def __init__(self, shapes):
-            self._point_to_shape = {(p.x(), p.y()): s for s in shapes for p in s}
+            self._point_to_shape = {(p.x(), p.y()): s for s in shapes for p in s._points}
             self._index_to_shape_idx = {}
             index, shape_index_start = 0, 0
             for s in shapes:
@@ -462,7 +470,7 @@ class MultiShape:
         to reuse some of the Shapes function, like nearestVertex
         """
         super().__init__()
-        all_points = [p for s in shapes for p in s]
+        all_points = [p for s in shapes for p in s._points]
         self._points = all_points
         self._shapes = shapes
         self._point_indexer = MultiShape.PointIndexer(shapes)

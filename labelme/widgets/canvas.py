@@ -38,7 +38,6 @@ class Canvas(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         # Configs
         self._epsilon = Config.get('epsilon', default=10.0)
-        self._label_color = Config.get('label_color')
         super(Canvas, self).__init__(*args, **kwargs)
         # Initialise local state.
         self._image_file = None
@@ -96,7 +95,7 @@ class Canvas(QtWidgets.QWidget):
 
     def load_snapshot(self, value):
         # Loading image clears all shapes, so it goes first.
-        self.load_image_file(value['image_file'])
+        self.load_image_file(value['image_file'], load_dl_hint=False)
         self.loadShapes(value['shapes'])
 
     def is_empty(self):
@@ -655,14 +654,8 @@ class Canvas(QtWidgets.QWidget):
             self.finalise()
 
     def setLabelFor(self, shape, text, form):
-        def argbToQColor(val):
-            hexStr = hex(val)[2:]
-            a, r, g, b = tuple(int(hexStr[i:i + 2], 16) for i in (0, 2, 4, 6))
-            return QtGui.QColor(r, g, b, a)
-
         shape.label = text
         shape.form = form
-        shape.line_color = shape.fill_color = argbToQColor(self._label_color[text])
 
     def setLastLabel(self, text, form):
         self.setLabelFor(self.shapes[-1], text, form)
@@ -689,11 +682,15 @@ class Canvas(QtWidgets.QWidget):
             self.drawingPolygon.emit(False)
         self.repaint()
 
-    def load_image_file(self, image_file):
+    def load_image_file(self, image_file, load_dl_hint=True):
         self._image_file = image_file
         self.pixmap = image_file.pixmap
         if not Config.get('keep_prev'):
             self.shapes = []
+        if load_dl_hint:
+            from labelme.backend import ModelLoader
+            model = ModelLoader()
+            self.shapes.extend(model.data)
         self.repaint()
 
     def loadShapes(self, shapes, replace=True):

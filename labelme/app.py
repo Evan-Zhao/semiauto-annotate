@@ -1116,6 +1116,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.load_snapshot(label_file.main_snapshot)
         else:
             self.canvas.load_image_file(image_file)
+            self.loadShapes(self.canvas.shapes)
         self.filename = filename
         self.setClean()
         self.canvas.setEnabled(True)
