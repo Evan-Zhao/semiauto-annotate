@@ -1,6 +1,6 @@
 from qtpy.QtCore import QPointF
 
-from labelme.shape import Shape, LabeledPoint
+from labelme.shape import Shape
 
 
 class YoloParser(object):
@@ -29,9 +29,8 @@ class YoloParser(object):
             QPointF(loc.left, loc.top),
             QPointF(loc.right, loc.bottom)
         ]
-        points = [LabeledPoint(p) for p in points]
-        return Shape.from_points(
+        return Shape(
             points,
-            label=label,
+            form=[[label, None, None]],
             shape_type='rectangle'
         )

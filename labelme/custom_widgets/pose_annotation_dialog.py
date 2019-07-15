@@ -37,7 +37,7 @@ class PoseAnnotationDialog(QtWidgets.QDialog):
         self.ui = UIPoseAnnotationDialog()
         self.ui.setupUi(self)
         # Results
-        self.point_idx_to_label = selected_shape.get_annotation_result()
+        self.point_idx_to_label = selected_shape.annotation
         self.label_to_point_idx = {v: k for k, v in self.point_idx_to_label.items()}
         raw_labels = Config.get('point_labels', [])
         self._point_labels = [self.get_label_list_text(i, l) for i, l in enumerate(raw_labels)]
@@ -72,6 +72,7 @@ class PoseAnnotationDialog(QtWidgets.QDialog):
             self.label_list.setCurrentRow(current_row + 1)
         # Set label to the shape on preview canvas (not the main canvas)
         # as we may need to undo this operation (like if dialog was reject()ed).
-        self.selected_shape.set_vertex_label(vertex_id, current_row)
-        # Store point -> label mapping
+        self.selected_shape.annotation[vertex_id] = current_row
+        # Store mapping
         self.point_idx_to_label[vertex_id] = current_row
+        self.label_to_point_idx[current_row] = vertex_id

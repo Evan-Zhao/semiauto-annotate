@@ -598,9 +598,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.restoreState(
             self.settings.value('window/state', QtCore.QByteArray()))
         self.lineColor = QtGui.QColor(
-            self.settings.value('line/color', Shape.line_color))
+            self.settings.value('line/color', DEFAULT_LINE_COLOR))
         self.fillColor = QtGui.QColor(
-            self.settings.value('fill/color', Shape.fill_color))
+            self.settings.value('fill/color', DEFAULT_FILL_COLOR))
         Shape.line_color = self.lineColor
         Shape.fill_color = self.fillColor
 
@@ -828,7 +828,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = self.labelList.get_shape_from_item(item)
         if shape is None:
             return
-        text, form = self.labelDialog.popUp(shape)
+        text, form, annotation = self.labelDialog.popUp(shape)
         if text is None:
             return
         if not self.validateLabel(text):
@@ -836,7 +836,11 @@ class MainWindow(QtWidgets.QMainWindow):
                               "Invalid label '{}' with validation type '{}'"
                               .format(text, Config.get('validate_label')))
             return
-        self.canvas.setLabelFor(shape, text, form)
+        if annotation:
+            # TODO: may need to convert to PoseShape first
+            shape.set_label(annotation)
+        else:
+            shape.set_label(form)
         item.setText(text)
         self.setDirty()
         if not self.uniqLabelList.findItems(text, Qt.MatchExactly):
@@ -979,7 +983,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     instance_text = previous_label
                 if instance_text != '':
                     text = instance_text
-            text, form = self.labelDialog.popUp(self.canvas.shapes[-1], text=text)
+            text, form, annotation = self.labelDialog.popUp(self.canvas.shapes[-1], text=text)
 
         if text and not self.validateLabel(text):
             self.errorMessage('Invalid label',
@@ -988,7 +992,7 @@ class MainWindow(QtWidgets.QMainWindow):
             text = ''
         if text:
             self.labelList.clearSelection()
-            self.addLabel(self.canvas.setLastLabel(text, form))
+            self.addLabel(self.canvas.setLastLabel(form, annotation))
             self.actions.editMode.setEnabled(True)
             self.actions.undoLastPoint.setEnabled(False)
             self.actions.undo.setEnabled(True)

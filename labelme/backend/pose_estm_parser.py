@@ -1,4 +1,6 @@
-from labelme.shape import Shape, MultiShape, LabeledPoint
+from qtpy.QtCore import QPointF
+
+from labelme.shape import Shape, PoseShape
 
 
 class PoseEstmParser(object):
@@ -42,7 +44,7 @@ class PoseEstmParser(object):
                     pose_parsed.append(None)
                     continue
                 self.assert_and_raise(type(p) is list and len(p) == 2)
-                pose_parsed.append(LabeledPoint(x=p[0], y=p[1], label=i))
+                pose_parsed.append((QPointF(*p), i))
             ret.append(pose_parsed)
         return ret
 
@@ -63,12 +65,13 @@ class PoseEstmParser(object):
             actual_chain = [lst for lst in actual_chain if lst]
             all_chain_points.extend(actual_chain)
 
-        shapes = []
+        shapes, annotation = [], []
         for chain in all_chain_points:
-            shapes.append(Shape.from_points(
-                chain,
-                label=PoseEstmParser.shape_label,
+            points, labels = list(zip(*chain))
+            shapes.append(Shape(
+                points, form=None,
                 shape_type=PoseEstmParser.shape_type
             ))
-        multi_shape = MultiShape(shapes)
+            annotation.append(labels)
+        multi_shape = PoseShape(shapes, annotation=annotation)
         return multi_shape

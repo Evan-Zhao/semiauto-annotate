@@ -4,7 +4,7 @@ from qtpy import QtWidgets
 
 import labelme.utils
 from labelme import QT5
-from labelme.shape import Shape, MultiShape
+from labelme.shape import Shape, PoseShape, EditingShape
 from labelme.custom_widgets.join_shapes_dialog import JoinShapesDialog
 from labelme.utils import Config
 
@@ -23,7 +23,7 @@ class Canvas(QtWidgets.QWidget):
     zoomRequest = QtCore.Signal(int, QtCore.QPointF)
     scrollRequest = QtCore.Signal(int, int)
     newShape = QtCore.Signal()
-    mergeShape = QtCore.Signal(list, MultiShape)
+    mergeShape = QtCore.Signal(list, PoseShape)
     selectionChanged = QtCore.Signal()
     shapeMoved = QtCore.Signal()
     drawingPolygon = QtCore.Signal(bool)
@@ -276,7 +276,7 @@ class Canvas(QtWidgets.QWidget):
         shape = self._hShape
         index = self._hEdge
         point = self._prevMovePoint
-        shape.insertPoint(index, point)
+        shape.insert_point(index, point)
         shape.highlightVertex(index, shape.MOVE_VERTEX)
         self._hShape = shape
         self._hVertex = index
@@ -291,7 +291,7 @@ class Canvas(QtWidgets.QWidget):
 
     def join_shapes(self, shapes):
         self.shapes = list(set(self.shapes) - set(shapes))
-        new_shape = MultiShape(shapes)
+        new_shape = PoseShape(shapes)
         self.shapes.append(new_shape)
         self.mergeShape.emit(shapes, new_shape)
         self.storeShapes()
@@ -309,20 +309,22 @@ class Canvas(QtWidgets.QWidget):
                 if self._current:
                     # Add cursor position to existing shape.
                     ctrl_pressed = int(ev.modifiers()) == QtCore.Qt.ControlModifier
-                    self._current.commit_point(cursor_point=pos)
                     if self._current.closed:
                         self.finalise()
                     elif self._current.complete and ctrl_pressed:
                         self.finalise()
+                    else:
+                        self._current.add_point()
                 else:
                     # Out of bound, nothing to be done
                     if self.outOfPixmap(pos):
                         return
                     # Create new shape.
-                    self._current = Shape(shape_type=self.createMode, init_point=pos)
+                    self._current = EditingShape(self.createMode, pos)
                     if self.createMode == 'point':
                         self.finalise()
                     else:
+                        self._current.add_point()
                         self.setHiding()
                         self.drawingPolygon.emit(True)
                 self.update()
@@ -499,24 +501,25 @@ class Canvas(QtWidgets.QWidget):
         # Translate by image position for all shapes
         # so that they move along
         p.translate(self._imagePos)
-        Shape.scale = self.scale
         selected_shapes_set = set(self.selectedShapes)
         for shape in self.shapes:
             selected = shape in selected_shapes_set
             if (selected or not self._hideBackground) and self.isCanvasVisible(shape):
-                shape.paint(p, fill=(selected or shape == self._hShape))
+                shape.paint(
+                    p, fill=(selected or shape == self._hShape), canvas=self
+                )
         if self._current:
-            self._current.paint(p)
+            self._current.paint(p, canvas=self)
         if self.selectedShapesCopy:
             for s in self.selectedShapesCopy:
-                s.paint(p)
+                s.paint(p, canvas=self)
 
         if (self.fillDrawing() and self.createMode == 'polygon' and
                 self._current is not None and len(self._current.points) >= 2):
             drawing_shape = self._current.copy()
             drawing_shape.fill = True
             drawing_shape.fill_color.setAlpha(64)
-            drawing_shape.paint(p)
+            drawing_shape.paint(p, canvas=self)
 
         p.end()
 
@@ -539,11 +542,11 @@ class Canvas(QtWidgets.QWidget):
 
     def finalise(self):
         assert self._current
-        self._current.finalize()
-        self.shapes.append(self._current)
+        self.shapes.append(self._current.to_immutable_point())
         self.storeShapes()
         self._current = None
         self.setHiding(False)
+        self.repaint()
         self.newShape.emit()
         self.update()
 
@@ -653,23 +656,19 @@ class Canvas(QtWidgets.QWidget):
         elif key == QtCore.Qt.Key_Return and self.canCloseShape():
             self.finalise()
 
-    def setLabelFor(self, shape, text, form):
-        shape.label = text
-        shape.form = form
-
-    def setLastLabel(self, text, form):
-        self.setLabelFor(self.shapes[-1], text, form)
+    def setLastLabel(self, form, annotation):
+        if annotation:
+            self.shapes[-1].set_label(annotation)
+        else:
+            self.shapes[-1].set_label(form)
         self.shapesBackups.pop()
         self.storeShapes()
         return self.shapes[-1]
 
     def undoLastLine(self):
         assert self.shapes
-        self._current = self.shapes.pop()
-        self._current.undo_point(forced=True)
-        if self._current.is_empty():
-            self._current = None
-        else:
+        self._current = EditingShape.undo_into_editing_point(self.shapes.pop())
+        if self._current:
             self.drawingPolygon.emit(True)
 
     def undoLastPoint(self):

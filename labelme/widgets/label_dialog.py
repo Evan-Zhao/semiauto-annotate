@@ -101,12 +101,23 @@ class UILabelDialog(object):
         return edit
 
     @staticmethod
+    def set_scroll_bar(component, fit_to_content):
+        if fit_to_content['row']:
+            component.setHorizontalScrollBarPolicy(
+                QtCore.Qt.ScrollBarAlwaysOff
+            )
+        if fit_to_content['column']:
+            component.setVerticalScrollBarPolicy(
+                QtCore.Qt.ScrollBarAlwaysOff
+            )
+
+    @staticmethod
     def make_label_list(parent, items, dialog):
         from labelme.utils import Config
 
         fit_to_content = Config.get('fit_to_content', default={'row': False, 'column': True})
         label_list = QtWidgets.QListWidget(parent)
-        LabelDialog.set_scroll_bar(label_list, fit_to_content)
+        UILabelDialog.set_scroll_bar(label_list, fit_to_content)
         label_list.addItems(items)
         if Config.get('sort_labels'):
             label_list.sortItems()
@@ -281,11 +292,11 @@ class UILabelDialog(object):
                 ret[s] = val
             return ret
 
-        ret = []
+        form = []
         all_sel = self.get_texts_selected()
         if len(all_sel) < len(self.group_boxes):
             # Some label list has no selection.
-            return None
+            return None, None
         for level, box in enumerate(self.group_boxes):
             box = self.boxes[level]
             parent_selected = all_sel[:level]
@@ -301,12 +312,12 @@ class UILabelDialog(object):
                 if type(child_spec) is list:
                     special_flags_box = self.get_special_flags_from_box(box)
                     special_flags = read_flags_box(special_flags_box, child_spec)
-            ret.append([level_selected, flags, special_flags, None])
+            form.append([level_selected, flags, special_flags])
+        pose_result = None
         if self._using_dialog_box:
             pose_dialog = self.parent_dialog.pose_dialog
             pose_result = pose_dialog.point_idx_to_label if pose_dialog else None
-            ret.append([None, None, None, pose_result])
-        return ret
+        return form, pose_result
 
     @staticmethod
     def get_first_label_from_state(state):
@@ -358,9 +369,9 @@ class UILabelDialog(object):
 
     def setup_ui_at_level(self, level, level_state=None):
         if level_state:
-            set_label, set_flag, set_special, _ = level_state
+            set_label, set_flag, set_special = level_state
         else:
-            set_label, set_flag, set_special, _ = [None] * 4
+            set_label = set_flag = set_special = None
         if level == -1:
             spec = self.spec
         else:
@@ -415,7 +426,7 @@ class UILabelDialog(object):
             # Setup leftmost groupbox, select top_label in this groupbox,
             # and then setup next level groupbox.
             # top_label can be None, which is okay.
-            self.setup_ui_at_level(-1, level_state=(top_label, None, None, None))
+            self.setup_ui_at_level(-1, level_state=(top_label, None, None))
             if top_label:
                 self.setup_ui_at_level(0)
         self.setting_state = False
@@ -439,6 +450,7 @@ class LabelDialog(QtWidgets.QDialog):
         self.ui = UILabelDialog(Config.get('labels'), self)
         self.ui.init_ui()
         self._form = None
+        self._annotation = None
         self._selected_shape = None
         self._boxes = []
         self._bindings = {}
@@ -469,17 +481,6 @@ class LabelDialog(QtWidgets.QDialog):
             row = label_list.row(items[0])
             edit.completer().setCurrentRow(row)
 
-    @staticmethod
-    def set_scroll_bar(component, fit_to_content):
-        if fit_to_content['row']:
-            component.setHorizontalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
-            )
-        if fit_to_content['column']:
-            component.setVerticalScrollBarPolicy(
-                QtCore.Qt.ScrollBarAlwaysOff
-            )
-
     def label_selected(self, item):
         if self.ui.setting_state:
             return
@@ -503,7 +504,7 @@ class LabelDialog(QtWidgets.QDialog):
         """
         # Accept and return; after popUp() returns, we'll open this dialog
         # in label_set() to make use of the returned result.
-        self._form = self.ui.get_full_state()
+        self._form, self._annotation = self.ui.get_full_state()
         self.accept()
         self._open_join_dialog = True
 
@@ -514,27 +515,16 @@ class LabelDialog(QtWidgets.QDialog):
         self.pose_dialog = PoseAnnotationDialog(self.parent(), self._selected_shape)
         self.pose_dialog.exec_()
 
-    def set_state_recursive(self, bindings, form):
-        flags = form['__flags']
-        for flag, (_, setter) in bindings['__flags'].items():
-            if flag in flags:
-                setter(flags[flag])
-        label = form['__label']
-        bindings['__label'][1](label)
-        next_form = form[label]
-        next_bindings = bindings[label]
-        if next_form is not None:
-            self.set_state_recursive(next_bindings, next_form)
-
     def validate(self):
         result = self.ui.get_full_state()
         if result is not None:
-            self._form = result
+            self._form, self._annotation = result
             self.accept()
         else:
             QtWidgets.QMessageBox.warning(self, 'Error', 'Label form is not complete')
 
     def popUp(self, selected_shape, text=None, move=True):
+        self._form = self._annotation = None
         self._selected_shape = selected_shape
         self.ui.set_to_state(state=selected_shape.form, top_label=text)
         self.ui.focus_on_first_edit()
@@ -550,7 +540,7 @@ class LabelDialog(QtWidgets.QDialog):
             # Form can be None when this dialog accept()s to open
             # Join Shapes dialog, and should be allowed.
             text = None
-        return text, self._form
+        return text, self._form, self._annotation
 
     def label_set(self):
         if self._open_join_dialog:

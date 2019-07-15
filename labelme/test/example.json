@@ -11,641 +11,493 @@
       },
       "shapes": [
         {
-          "py/object": "labelme.shape.Shape",
+          "py/object": "labelme.shape.shape.Shape",
           "py/state": {
-            "fill_color": {
-              "py/tuple": [
-                0,
-                125,
-                52,
-                128
-              ]
-            },
-            "form": null,
-            "label": "person",
-            "line_color": {
-              "py/tuple": [
-                0,
-                125,
-                52,
-                128
-              ]
-            },
-            "points": [
-              {
-                "py/reduce": [
-                  {
-                    "py/type": "labelme.shape.LabeledPoint"
-                  },
-                  {
-                    "py/tuple": [
-                      null,
-                      468.0,
-                      197.0,
-                      null
-                    ]
-                  }
-                ]
-              },
-              {
-                "py/reduce": [
-                  {
-                    "py/type": "labelme.shape.LabeledPoint"
-                  },
-                  {
-                    "py/tuple": [
-                      null,
-                      734.0,
-                      816.0,
-                      null
-                    ]
-                  }
-                ]
-              }
-            ],
-            "shape_type": "rectangle"
-          }
-        },
-        {
-          "py/object": "labelme.shape.Shape",
-          "py/state": {
-            "fill_color": {
-              "py/tuple": [
-                0,
-                125,
-                52,
-                128
-              ]
-            },
-            "form": null,
-            "label": "person",
-            "line_color": {
-              "py/tuple": [
-                0,
-                125,
-                52,
-                128
-              ]
-            },
-            "points": [
-              {
-                "py/reduce": [
-                  {
-                    "py/type": "labelme.shape.LabeledPoint"
-                  },
-                  {
-                    "py/tuple": [
-                      null,
-                      326.0,
-                      294.0,
-                      null
-                    ]
-                  }
-                ]
-              },
-              {
-                "py/reduce": [
-                  {
-                    "py/type": "labelme.shape.LabeledPoint"
-                  },
-                  {
-                    "py/tuple": [
-                      null,
-                      501.0,
-                      931.0,
-                      null
-                    ]
-                  }
-                ]
-              }
-            ],
-            "shape_type": "rectangle"
-          }
-        },
-        {
-          "py/object": "labelme.shape.Shape",
-          "py/state": {
-            "fill_color": {
-              "py/tuple": [
-                255,
-                104,
-                0,
-                128
-              ]
-            },
-            "form": null,
-            "label": "car",
-            "line_color": {
-              "py/tuple": [
-                255,
-                104,
-                0,
-                128
-              ]
-            },
-            "points": [
-              {
-                "py/reduce": [
-                  {
-                    "py/type": "labelme.shape.LabeledPoint"
-                  },
-                  {
-                    "py/tuple": [
-                      null,
-                      766.0,
-                      437.0,
-                      null
-                    ]
-                  }
-                ]
-              },
-              {
-                "py/reduce": [
-                  {
-                    "py/type": "labelme.shape.LabeledPoint"
-                  },
-                  {
-                    "py/tuple": [
-                      null,
-                      1189.0,
-                      646.0,
-                      null
-                    ]
-                  }
-                ]
-              }
-            ],
-            "shape_type": "rectangle"
-          }
-        },
-        {
-          "py/object": "labelme.shape.Shape",
-          "py/state": {
-            "fill_color": {
-              "py/tuple": [
-                255,
-                104,
-                0,
-                128
-              ]
-            },
-            "form": null,
-            "label": "car",
-            "line_color": {
-              "py/tuple": [
-                255,
-                104,
-                0,
-                128
-              ]
-            },
-            "points": [
-              {
-                "py/reduce": [
-                  {
-                    "py/type": "labelme.shape.LabeledPoint"
-                  },
-                  {
-                    "py/tuple": [
-                      null,
-                      690.0,
-                      437.0,
-                      null
-                    ]
-                  }
-                ]
-              },
-              {
-                "py/reduce": [
-                  {
-                    "py/type": "labelme.shape.LabeledPoint"
-                  },
-                  {
-                    "py/tuple": [
-                      null,
-                      725.0,
-                      458.0,
-                      null
-                    ]
-                  }
-                ]
-              }
-            ],
-            "shape_type": "rectangle"
-          }
-        },
-        {
-          "py/object": "labelme.shape.MultiShape",
-          "py/state": {
-            "fill_color": {
-              "py/reduce": [
+            "form": [
+              [
+                "lane",
                 {
-                  "py/function": "PyQt5.sip._unpickle_type"
+                  "occluded": false,
+                  "truncated": true
                 },
+                null
+              ],
+              [
+                "crossing",
                 {
-                  "py/tuple": [
-                    "PyQt5.QtGui",
-                    "QColor",
-                    {
-                      "py/tuple": [
-                        0,
-                        125,
-                        52,
-                        128
-                      ]
-                    }
-                  ]
-                }
+                  "directions": "horizontal",
+                  "line": "dotted"
+                },
+                null
               ]
-            },
-            "form": null,
-            "label": "person",
-            "line_color": {
-              "py/id": 19
+            ],
+            "points": [
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          1023.2895534451404,
+                          688.1952583013403
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          1263.3885633461305,
+                          960.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          1280.0,
+                          960.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          1280.0,
+                          858.4922880043107
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          1088.6360880986056,
+                          693.6408028557958
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "shape_type": "polygon"
+          }
+        },
+        {
+          "py/object": "labelme.shape.pose_shape.PoseShape",
+          "py/state": {
+            "annotation": {
+              "0": 1,
+              "1": 8,
+              "10": 5,
+              "11": 6,
+              "12": 7,
+              "13": 13,
+              "14": 12,
+              "15": 11,
+              "2": 9,
+              "3": 10,
+              "4": 4,
+              "5": 3,
+              "6": 2,
+              "7": 16,
+              "8": 14,
+              "9": 0
             },
             "sub_shapes": [
               {
-                "py/object": "labelme.shape.Shape",
+                "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
                   "form": null,
-                  "label": "person",
-                  "line_color": {
+                  "points": {
                     "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  525.0,
+                                  312.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  526.0,
+                                  481.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  514.0,
+                                  630.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  509.0,
+                                  783.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
-                  "points": [
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            525.0,
-                            312.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            510.0,
-                            312.0,
-                            null
-                          ]
-                        }
-                      ]
-                    }
-                  ],
                   "shape_type": "linestrip"
                 }
               },
               {
-                "py/object": "labelme.shape.Shape",
+                "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
                   "form": null,
-                  "label": "person",
-                  "line_color": {
+                  "points": {
                     "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  693.0,
+                                  323.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  600.0,
+                                  334.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  510.0,
+                                  312.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  544.0,
+                                  246.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  571.0,
+                                  244.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  575.0,
+                                  257.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
-                  "points": [
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            545.0,
-                            313.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/id": 23
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            526.0,
-                            481.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            514.0,
-                            630.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            509.0,
-                            783.0,
-                            null
-                          ]
-                        }
-                      ]
-                    }
-                  ],
                   "shape_type": "linestrip"
                 }
               },
               {
-                "py/object": "labelme.shape.Shape",
+                "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
                   "form": null,
-                  "label": "person",
-                  "line_color": {
+                  "points": {
                     "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  545.0,
+                                  313.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  595.0,
+                                  382.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  665.0,
+                                  435.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
-                  "points": [
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            693.0,
-                            323.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            600.0,
-                            334.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/id": 24
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            544.0,
-                            246.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            571.0,
-                            244.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            575.0,
-                            257.0,
-                            null
-                          ]
-                        }
-                      ]
-                    }
-                  ],
                   "shape_type": "linestrip"
                 }
               },
               {
-                "py/object": "labelme.shape.Shape",
+                "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
                   "form": null,
-                  "label": "person",
-                  "line_color": {
+                  "points": {
                     "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  521.0,
+                                  772.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  541.0,
+                                  627.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  553.0,
+                                  479.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
-                  "points": [
-                    {
-                      "py/id": 27
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            595.0,
-                            382.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            665.0,
-                            435.0,
-                            null
-                          ]
-                        }
-                      ]
-                    }
-                  ],
-                  "shape_type": "linestrip"
-                }
-              },
-              {
-                "py/object": "labelme.shape.Shape",
-                "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "form": null,
-                  "label": "person",
-                  "line_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "points": [
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            521.0,
-                            772.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            541.0,
-                            627.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            553.0,
-                            479.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/id": 23
-                    },
-                    {
-                      "py/id": 37
-                    }
-                  ],
                   "shape_type": "linestrip"
                 }
               }
@@ -653,361 +505,610 @@
           }
         },
         {
-          "py/object": "labelme.shape.MultiShape",
+          "py/object": "labelme.shape.shape.Shape",
           "py/state": {
-            "fill_color": {
-              "py/reduce": [
-                {
-                  "py/function": "PyQt5.sip._unpickle_type"
-                },
-                {
-                  "py/tuple": [
-                    "PyQt5.QtGui",
-                    "QColor",
-                    {
-                      "py/tuple": [
-                        0,
-                        125,
-                        52,
-                        128
-                      ]
-                    }
-                  ]
-                }
+            "form": [
+              [
+                "person",
+                null,
+                null
               ]
-            },
-            "form": null,
-            "label": "person",
-            "line_color": {
-              "py/id": 48
+            ],
+            "points": [
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          326.0,
+                          294.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          501.0,
+                          931.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "shape_type": "rectangle"
+          }
+        },
+        {
+          "py/object": "labelme.shape.pose_shape.PoseShape",
+          "py/state": {
+            "annotation": {
+              "0": 1,
+              "1": 8,
+              "10": 12,
+              "11": 11,
+              "2": 9,
+              "3": 4,
+              "4": 3,
+              "5": 2,
+              "6": 16,
+              "7": 14,
+              "8": 0,
+              "9": 5
             },
             "sub_shapes": [
               {
-                "py/object": "labelme.shape.Shape",
+                "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
                   "form": null,
-                  "label": "person",
-                  "line_color": {
+                  "points": {
                     "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  407.0,
+                                  460.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  413.0,
+                                  694.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  407.0,
+                                  871.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
-                  "points": [
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            407.0,
-                            460.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            382.0,
-                            469.0,
-                            null
-                          ]
-                        }
-                      ]
-                    }
-                  ],
                   "shape_type": "linestrip"
                 }
               },
               {
-                "py/object": "labelme.shape.Shape",
+                "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
                   "form": null,
-                  "label": "person",
-                  "line_color": {
+                  "points": {
                     "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  395.0,
+                                  737.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  366.0,
+                                  618.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  382.0,
+                                  469.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  403.0,
+                                  360.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  449.0,
+                                  348.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  466.0,
+                                  363.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
-                  "points": [
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            436.0,
-                            452.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/id": 52
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            413.0,
-                            694.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            407.0,
-                            871.0,
-                            null
-                          ]
-                        }
-                      ]
-                    }
-                  ],
                   "shape_type": "linestrip"
                 }
               },
               {
-                "py/object": "labelme.shape.Shape",
+                "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
                   "form": null,
-                  "label": "person",
-                  "line_color": {
+                  "points": {
                     "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  436.0,
+                                  452.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
-                  "points": [
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            395.0,
-                            737.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            366.0,
-                            618.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/id": 53
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            403.0,
-                            360.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            449.0,
-                            348.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            466.0,
-                            363.0,
-                            null
-                          ]
-                        }
-                      ]
-                    }
-                  ],
                   "shape_type": "linestrip"
                 }
               },
               {
-                "py/object": "labelme.shape.Shape",
+                "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
                   "form": null,
-                  "label": "person",
-                  "line_color": {
+                  "points": {
                     "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  443.0,
+                                  858.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "py/reduce": [
+                          {
+                            "py/function": "PyQt5.sip._unpickle_type"
+                          },
+                          {
+                            "py/tuple": [
+                              "PyQt5.QtCore",
+                              "QPointF",
+                              {
+                                "py/tuple": [
+                                  453.0,
+                                  686.0
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
-                  "points": [
-                    {
-                      "py/id": 56
-                    }
-                  ],
-                  "shape_type": "linestrip"
-                }
-              },
-              {
-                "py/object": "labelme.shape.Shape",
-                "py/state": {
-                  "fill_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "form": null,
-                  "label": "person",
-                  "line_color": {
-                    "py/tuple": [
-                      0,
-                      125,
-                      52,
-                      128
-                    ]
-                  },
-                  "points": [
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            443.0,
-                            858.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/reduce": [
-                        {
-                          "py/type": "labelme.shape.LabeledPoint"
-                        },
-                        {
-                          "py/tuple": [
-                            null,
-                            453.0,
-                            686.0,
-                            null
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "py/id": 52
-                    },
-                    {
-                      "py/id": 65
-                    }
-                  ],
                   "shape_type": "linestrip"
                 }
               }
             ]
+          }
+        },
+        {
+          "py/object": "labelme.shape.shape.Shape",
+          "py/state": {
+            "form": [
+              [
+                "lane",
+                {
+                  "occluded": false,
+                  "truncated": true
+                },
+                null
+              ],
+              [
+                "crossing",
+                {
+                  "directions": "vertical",
+                  "line": "solid"
+                },
+                null
+              ]
+            ],
+            "points": [
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          831.7053950292989,
+                          678.2942682023304
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          877.2499494847443,
+                          960.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          1022.7945039401898,
+                          960.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          900.5172762174175,
+                          684.2348622617365
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "shape_type": "polygon"
+          }
+        },
+        {
+          "py/object": "labelme.shape.shape.Shape",
+          "py/state": {
+            "form": [
+              [
+                "car",
+                null,
+                null
+              ]
+            ],
+            "points": [
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          690.0,
+                          437.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          725.0,
+                          458.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "shape_type": "rectangle"
+          }
+        },
+        {
+          "py/object": "labelme.shape.shape.Shape",
+          "py/state": {
+            "form": [
+              [
+                "person",
+                null,
+                null
+              ]
+            ],
+            "points": [
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          468.0,
+                          197.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          734.0,
+                          816.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "shape_type": "rectangle"
+          }
+        },
+        {
+          "py/object": "labelme.shape.shape.Shape",
+          "py/state": {
+            "form": [
+              [
+                "car",
+                null,
+                null
+              ]
+            ],
+            "points": [
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          766.0,
+                          437.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "py/reduce": [
+                  {
+                    "py/function": "PyQt5.sip._unpickle_type"
+                  },
+                  {
+                    "py/tuple": [
+                      "PyQt5.QtCore",
+                      "QPointF",
+                      {
+                        "py/tuple": [
+                          1189.0,
+                          646.0
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "shape_type": "rectangle"
           }
         }
       ]
