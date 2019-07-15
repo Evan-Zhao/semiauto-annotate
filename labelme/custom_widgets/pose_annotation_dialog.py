@@ -8,11 +8,11 @@ from labelme.utils import Config
 class UIPoseAnnotationDialog(object):
     def setupUi(self, dialog):
         dialog.setObjectName("Dialog")
-        dialog.resize(400, 300)
+        dialog.resize(800, 600)
         dialog.setModal(True)
         self.gridLayout = QtWidgets.QGridLayout(dialog)
         self.gridLayout.setObjectName("gridLayout")
-        self.canvas = PreviewCanvas.from_canvas(dialog.parent())
+        self.canvas = PreviewCanvas.from_canvas(dialog.parent(), no_highlight=True)
         self.canvas.setObjectName("canvas")
         self.point_label_list = QtWidgets.QListWidget(dialog)
         self.point_label_list.setObjectName("point_labels_list")

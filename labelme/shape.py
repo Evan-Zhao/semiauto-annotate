@@ -111,7 +111,7 @@ class Shape(object):
     point_size = 8
     line_width = 4.0
     scale = 1.0
-    _text_font = QtGui.QFont('Helvetica', 10)
+    _text_font = QtGui.QFont('Helvetica', 24)
     all_types = ['polygon', 'rectangle', 'point', 'line', 'circle', 'linestrip', 'curve', 'freeform']
     must_close = ['polygon', 'rectangle', 'point', 'line', 'circle']
     manual_close = ['polygon', 'curve', 'freeform']

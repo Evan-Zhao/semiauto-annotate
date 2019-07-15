@@ -12,12 +12,14 @@ class PreviewCanvas(QtWidgets.QWidget):
     scrollRequest = QtCore.Signal(int, int)
     selectionChanged = QtCore.Signal()
     vertexSelected = QtCore.Signal()
+    min_size, max_size = 400, 1000
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, no_highlight=False, *args, **kwargs):
         self._epsilon = Config.get('epsilon', default=10.0)
         self._label_color = Config.get('label_color')
         super(PreviewCanvas, self).__init__(*args, **kwargs)
         # Initialise local state.
+        self._no_highlight = no_highlight
         self.shapes = []
         self.selected_shapes = set()  # save the selected shapes here
         self.hShape, self.hVertex = None, None
@@ -28,11 +30,26 @@ class PreviewCanvas(QtWidgets.QWidget):
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
 
+    @staticmethod
+    def compute_scale(current_scale, w, h):
+        min_wh, max_wh = min(w, h), max(w, h)
+        min_scale = PreviewCanvas.min_size / min_wh
+        max_scale = PreviewCanvas.max_size / max_wh
+        if min_scale > current_scale:
+            return min_scale
+        elif max_scale < current_scale:
+            return max_scale
+        return current_scale
+
+    def set_pixmap(self, pixmap):
+        self._pixmap = pixmap
+        self._scale = self.compute_scale(self._scale, pixmap.width(), pixmap.height())
+
     @classmethod
-    def from_canvas(cls, canvas):
-        preview_canvas = cls()
+    def from_canvas(cls, canvas, *args, **kwargs):
+        preview_canvas = cls(*args, **kwargs)
         preview_canvas.shapes = canvas.shapes
-        preview_canvas._pixmap = canvas.pixmap
+        preview_canvas.set_pixmap(canvas.pixmap)
         return preview_canvas
 
     def set_selection_signal(self, selection_changed):
@@ -148,7 +165,10 @@ class PreviewCanvas(QtWidgets.QWidget):
         p.translate(self._imagePos)
         Shape.scale = self._scale
         for shape in self.shapes:
-            shape.paint(p, fill=(shape in self.selected_shapes or shape == self.hShape))
+            fill = (not self._no_highlight and (
+                    shape in self.selected_shapes or shape == self.hShape
+            ))
+            shape.paint(p, fill=fill)
         p.end()
 
     def transformPos(self, point):
@@ -202,11 +222,13 @@ class PreviewCanvas(QtWidgets.QWidget):
                 self.scrollRequest.emit(ev.delta(), QtCore.Qt.Horizontal)
         ev.accept()
 
-    def replace_and_focus_shape(self, shape: Shape, padding: float = 40.0):
+    def replace_and_focus_shape(self, shape: Shape, padding: float = 20.0):
         shape_rect = shape.boundingRect()
-        shape_rect = shape_rect.adjusted(-padding, -padding, padding, padding)
+        scale = self.compute_scale(self._scale, shape_rect.width(), shape_rect.height())
+        pd = padding / scale
+        shape_rect = shape_rect.adjusted(-pd, -pd, pd, pd)
         rect_int = QtCore.QRect(*shape_rect.getRect())
-        self._pixmap = self._pixmap.copy(rect_int)
+        self.set_pixmap(self._pixmap.copy(rect_int))
         shape = shape.copy()
         shape.moveBy(-rect_int.topLeft())
         self.shapes = [shape]

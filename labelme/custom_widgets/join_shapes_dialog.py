@@ -7,7 +7,7 @@ from labelme.custom_widgets.custom_label_qlist import CustomLabelQList
 class UIJoinShapesDialog(object):
     def setupUi(self, dialog):
         dialog.setObjectName("Dialog")
-        dialog.resize(400, 300)
+        dialog.resize(600, 450)
         dialog.setModal(True)
         self.gridLayout = QtWidgets.QGridLayout(dialog)
         self.gridLayout.setObjectName("gridLayout")
