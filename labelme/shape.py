@@ -504,10 +504,10 @@ class MultiShape:
         painter.setPen(pen)
         path = QtGui.QPainterPath()
         for s1, s2 in zip(self._shapes, self._shapes[1:]):
-            path.moveTo(s1[0].point)
-            path.lineTo(s2[0].point)
-            path.moveTo(s1[-1].point)
-            path.lineTo(s2[-1].point)
+            path.moveTo(s1[0])
+            path.lineTo(s2[0])
+            path.moveTo(s1[-1])
+            path.lineTo(s2[-1])
         painter.drawPath(path)
 
     def highlightVertex(self, i, action):

@@ -20,7 +20,6 @@ class YoloParser(object):
 
     @staticmethod
     def yolo_dict_to_shape(val):
-        print(val)
         loc = val.location
         points = [
             QPointF(loc.left, loc.top),
