@@ -43,7 +43,7 @@ class PoseEstmParser(object):
                     pose_parsed.append(None)
                     continue
                 self.assert_and_raise(type(p) is list and len(p) == 2)
-                pose_parsed.append(LabeledPoint.from_xy(*p))
+                pose_parsed.append(LabeledPoint(x=p[0], y=p[1]))
             ret.append(pose_parsed)
         return ret
 

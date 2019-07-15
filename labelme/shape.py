@@ -75,43 +75,24 @@ class BezierB:
         return self.points
 
 
-class LabeledPoint:
-    def __init__(self, qpoint_f: QPointF, label=None):
-        self.point = qpoint_f
+class LabeledPoint(QPointF):
+    def __init__(self, qpoint_f=None, x=None, y=None, label=None):
+        if not qpoint_f and (x and y):
+            qpoint_f = QPointF(x, y)
+        super().__init__(qpoint_f)
         self.label = label
 
-    def __getattr__(self, item):
-        if item in {'x', 'y'}:
-            return getattr(self.point, item)
-        raise AttributeError(item)
-
-    @classmethod
-    def from_xy(cls, x: float, y: float, label=None):
-        return cls(QPointF(x, y), label=label)
-
     def __add__(self, other: QPointF):
-        return LabeledPoint(self.point + other, label=self.label)
-
-    def __iadd__(self, other: QPointF):
-        self.point += other
-        return self
+        return LabeledPoint(QPointF(self) + QPointF(other), label=self.label)
 
     def __sub__(self, other: QPointF):
-        return LabeledPoint(self.point - other, label=self.label)
-
-    def __eq__(self, other):
-        return self.point == other.point
+        return LabeledPoint(QPointF(self) - QPointF(other), label=self.label)
 
     def __repr__(self):
         return f'LabeledPoint({self.x()}, {self.y()}, label={self.label})'
 
-    def __getstate__(self):
-        return [self.x(), self.y(), self.label]
-
-    def __setstate__(self, state):
-        x, y, label = state
-        self.point = QPointF(x, y)
-        self.label = label
+    def __reduce__(self):
+        return self.__class__, (None, self.x(), self.y(), self.label)
 
 
 class Shape(object):
@@ -228,7 +209,7 @@ class Shape(object):
 
     def update_cursor(self, value):
         assert self._cursor_point is not None
-        self._cursor_point.point = value
+        self._cursor_point = LabeledPoint(value)
 
     def undo_point(self, forced=False):
         if self._polygon_closed:
@@ -262,7 +243,7 @@ class Shape(object):
             d = self.point_size / self.scale
             shape = self.point_type
             labeled_point = actual_points[idx]
-            point, label = labeled_point.point, labeled_point.label
+            point, label = labeled_point, labeled_point.label
             if idx == self._highlightIndex:
                 size, shape = self._highlightSettings[self._highlightMode]
                 d *= size
@@ -301,36 +282,36 @@ class Shape(object):
             rectangle = self.getCircleRectFromLine(actual_points)
             single_line_path.addEllipse(rectangle)
         elif self.shape_type == 'linestrip' and self._points:
-            line_path1.moveTo(self._points[0].point)
+            line_path1.moveTo(self._points[0])
             for p in self._points:
-                line_path1.lineTo(p.point)
+                line_path1.lineTo(p)
             if self._cursor_point:
-                line_path2.moveTo(self._points[-1].point)
-                line_path2.lineTo(self._cursor_point.point)
+                line_path2.moveTo(self._points[-1])
+                line_path2.lineTo(self._cursor_point)
         elif self.shape_type == 'curve' and self._points:
             # Paint Bezier curve across given points.
             refined_points = BezierB(actual_points).smooth()
             if self._cursor_point:
-                sep_idx = refined_points.index(self._points[-1].point)
-                line_path1.moveTo(refined_points[0].point)
+                sep_idx = refined_points.index(self._points[-1])
+                line_path1.moveTo(refined_points[0])
                 for p in refined_points[:sep_idx]:
-                    line_path1.lineTo(p.point)
-                line_path2.moveTo(refined_points[sep_idx].point)
+                    line_path1.lineTo(p)
+                line_path2.moveTo(refined_points[sep_idx])
                 for p in refined_points[sep_idx:]:
-                    line_path2.lineTo(p.point)
+                    line_path2.lineTo(p)
             else:
                 line_path1.moveTo(refined_points[0])
                 for p in refined_points:
                     line_path1.lineTo(p)
         elif self._points:
-            line_path1.moveTo(actual_points[0].point)
+            line_path1.moveTo(actual_points[0])
             for p in actual_points:
-                line_path1.lineTo(p.point)
+                line_path1.lineTo(p)
             if self._cursor_point:
-                line_path2.moveTo(self._points[-1].point)
-                line_path2.lineTo(self._cursor_point.point)
+                line_path2.moveTo(self._points[-1])
+                line_path2.lineTo(self._cursor_point)
             elif self.closed:
-                line_path1.lineTo(actual_points[0].point)
+                line_path1.lineTo(actual_points[0])
 
         painter.drawPath(line_path1)
         painter.setPen(pen2)
@@ -386,9 +367,9 @@ class Shape(object):
                 rectangle = self.getCircleRectFromLine(self._points)
                 path.addEllipse(rectangle)
         else:
-            path = QtGui.QPainterPath(self._points[0].point)
+            path = QtGui.QPainterPath(self._points[0])
             for p in self._points[1:]:
-                path.lineTo(p.point)
+                path.lineTo(p)
         return path
 
     def boundingRect(self):
@@ -429,7 +410,7 @@ class Shape(object):
         self.line_color = QtGui.QColor(*state['line_color'])
         self.fill_color = QtGui.QColor(*state['fill_color'])
         if type(state['points'][0]) is tuple:
-            self._points = [LabeledPoint.from_xy(*p) for p in state['points']]
+            self._points = [LabeledPoint(x=p[0], y=p[1]) for p in state['points']]
         else:
             self._points = state['points']
         self.shape_type = state['shape_type']
@@ -439,10 +420,10 @@ class Shape(object):
         return len(self._points)
 
     def __getitem__(self, key):
-        return self._points[key].point
+        return self._points[key]
 
     def __setitem__(self, key, value):
-        self._points[key].point = value
+        self._points[key] = value
 
 
 class MultiShape:
