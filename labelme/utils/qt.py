@@ -25,10 +25,31 @@ def newButton(text, icon=None, slot=None):
     return b
 
 
+class BindingQAction(QtWidgets.QAction):
+    def __init__(self, enable_condition, *args):
+        super(BindingQAction, self).__init__(*args)
+        self.enable_condition = enable_condition
+
+    def set_condition(self, cond):
+        self.enable_condition = cond
+
+    def refresh(self):
+        if self.enable_condition:
+            super().setEnabled(self.enable_condition())
+
+    def setEnabled(self, value):
+        if self.enable_condition:
+            result = self.enable_condition()
+            print(f"Don't set a BindingQAction! Will refresh to {result} now.")
+            self.refresh()
+        else:
+            super().setEnabled(value)
+
+
 def newAction(parent, text, slot=None, shortcut=None, icon=None,
-              tip=None, checkable=False, enabled=True):
+              tip=None, checkable=False, enabled=True, enable_condition=None):
     """Create a new action and assign callbacks, shortcuts, etc."""
-    a = QtWidgets.QAction(text, parent)
+    a = BindingQAction(enable_condition, text, parent)
     if icon is not None:
         a.setIconText(text.replace(' ', '\n'))
         a.setIcon(newIcon(icon))
@@ -44,7 +65,10 @@ def newAction(parent, text, slot=None, shortcut=None, icon=None,
         a.triggered.connect(slot)
     if checkable:
         a.setCheckable(True)
-    a.setEnabled(enabled)
+    if enable_condition:
+        a.refresh()
+    else:
+        a.setEnabled(enabled)
     return a
 
 

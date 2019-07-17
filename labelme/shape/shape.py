@@ -35,6 +35,7 @@ class Shape(object):
         NEAR_VERTEX: (4, P_ROUND),
         MOVE_VERTEX: (1.5, P_SQUARE),
     }
+    all_types = ['polygon', 'rectangle', 'point', 'line', 'linestrip', 'circle', 'curve', 'freeform']
 
     def __init__(self, points, form, shape_type):
         self.points = points

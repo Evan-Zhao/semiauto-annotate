@@ -156,44 +156,42 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.shape_dock)
         self.addDockWidget(Qt.RightDockWidgetArea, self.file_dock)
 
+        self.filename = None
+
         # Actions
         action = functools.partial(utils.newAction, self)
         shortcuts = Config.get('shortcuts')
-        quit = action('&Quit', self.close, shortcuts['quit'], 'quit',
-                      'Quit application')
+        quit_ = action('&Quit', self.close, shortcuts['quit'], 'quit', 'Quit application')
         open_ = action('&Open', self.openFile, shortcuts['open'], 'open',
                        'Open image or label file')
         opendir = action('&Open Dir', self.openDirDialog,
                          shortcuts['open_dir'], 'open', u'Open Dir')
         openNextImg = action(
-            '&Next Image',
-            self.openNextImg,
-            shortcuts['open_next'],
-            'next',
-            u'Open next (hold Ctl+Shift to copy labels)',
-            enabled=False,
+            '&Next Image', self.openNextImg, shortcuts['open_next'],
+            'next', u'Open next (hold Ctl+Shift to copy labels)',
+            enable_condition=lambda: bool(self.imageList) and self.mayContinue()
         )
         openPrevImg = action(
-            '&Prev Image',
-            self.openPrevImg,
-            shortcuts['open_prev'],
-            'prev',
-            u'Open prev (hold Ctl+Shift to copy labels)',
-            enabled=False,
+            '&Prev Image', self.openPrevImg, shortcuts['open_prev'],
+            'prev', u'Open prev (hold Ctl+Shift to copy labels)',
+            enable_condition=lambda: bool(self.imageList) and self.mayContinue()
         )
-        save = action('&Save', self.saveFile, shortcuts['save'], 'save',
-                      'Save labels to file', enabled=False)
-        saveAs = action('&Save As', self.saveFileAs, shortcuts['save_as'],
-                        'save-as', 'Save labels to a different file',
-                        enabled=False)
+        save = action(
+            '&Save', self.saveFile, shortcuts['save'], 'save',
+            'Save labels to file',
+            enable_condition=lambda: self.dirty
+        )
+        saveAs = action(
+            '&Save As', self.saveFileAs, shortcuts['save_as'],
+            'save-as', 'Save labels to a different file',
+            enable_condition=lambda: not self.canvas.is_empty()
+        )
 
         deleteFile = action(
-            '&Delete File',
-            self.deleteFile,
-            shortcuts['delete_file'],
-            'delete',
-            'Delete current label file',
-            enabled=False)
+            '&Delete File', self.deleteFile, shortcuts['delete_file'],
+            'delete', 'Delete current label file',
+            enable_condition=lambda: self.hasLabelFile()
+        )
 
         changeOutputDir = action(
             '&Change Output Dir',
@@ -206,15 +204,15 @@ class MainWindow(QtWidgets.QMainWindow):
         saveAuto = action(
             text='Save &Automatically',
             slot=lambda x: self.actions.saveAuto.setChecked(x),
-            icon='save',
-            tip='Save automatically',
-            checkable=True,
-            enabled=True,
+            icon='save', tip='Save automatically', checkable=True
         )
         saveAuto.setChecked(Config.get('auto_save'))
 
-        close = action('&Close', self.closeFile, shortcuts['close'], 'close',
-                       'Close current file')
+        close = action(
+            '&Close', self.closeFile, shortcuts['close'],
+            'close', 'Close current file',
+            enable_condition=lambda: not self.canvas.is_empty()
+        )
         color1 = action('Polygon &Line Color', self.chooseColor1,
                         shortcuts['edit_line_color'], 'color_line',
                         'Choose polygon line color')
@@ -230,98 +228,70 @@ class MainWindow(QtWidgets.QMainWindow):
             checkable=True)
         toggle_keep_prev_mode.setChecked(Config.get('keep_prev'))
 
-        createMode = action(
-            'Create Polygons',
-            lambda: self.toggleDrawMode(False, createMode='polygon'),
-            shortcuts['create_polygon'],
-            'objects',
-            'Start drawing polygons',
-            enabled=False,
-        )
-        createRectangleMode = action(
-            'Create Rectangle',
-            lambda: self.toggleDrawMode(False, createMode='rectangle'),
-            shortcuts['create_rectangle'],
-            'objects',
-            'Start drawing rectangles',
-            enabled=False,
-        )
-        createCircleMode = action(
-            'Create Circle',
-            lambda: self.toggleDrawMode(False, createMode='circle'),
-            shortcuts['create_circle'],
-            'objects',
-            'Start drawing circles',
-            enabled=False,
-        )
-        createLineMode = action(
-            'Create Line',
-            lambda: self.toggleDrawMode(False, createMode='line'),
-            shortcuts['create_line'],
-            'objects',
-            'Start drawing lines',
-            enabled=False,
-        )
-        createPointMode = action(
-            'Create Point',
-            lambda: self.toggleDrawMode(False, createMode='point'),
-            shortcuts['create_point'],
-            'objects',
-            'Start drawing points',
-            enabled=False,
-        )
-        createLineStripMode = action(
-            'Create LineStrip',
-            lambda: self.toggleDrawMode(False, createMode='linestrip'),
-            shortcuts['create_linestrip'],
-            'objects',
-            'Start drawing linestrip. Ctrl+LeftClick ends creation.',
-            enabled=False,
-        )
-        createCurveMode = action(
-            'Create Curve',
-            lambda: self.toggleDrawMode(False, createMode='curve'),
-            shortcuts['create_curve'],
-            'objects',
-            'Start drawing curve (Bezier).',
-            enabled=False, )
-        createFreeformMode = action(
-            'Create Freeform (Lines and Curves)',
-            lambda: self.toggleDrawMode(False, createMode='freeform'),
-            shortcuts['create_freeform'],
-            'objects',
-            'Start drawing freeform (Lines and Curves).',
-            enabled=False, )
-        editMode = action('Edit Polygons', self.setEditMode,
-                          shortcuts['edit_polygon'], 'edit',
-                          'Move and edit the selected polygons', enabled=False)
+        def create_mode_enabled(self_mode):
+            if self.canvas.is_empty():
+                return False
+            return self.canvas.createMode != self_mode or self.canvas.editing()
 
-        delete = action('Delete Polygons', self.deleteSelectedShape,
-                        shortcuts['delete_polygon'], 'cancel',
-                        'Delete the selected polygons', enabled=False)
-        copy = action('Duplicate Polygons', self.copySelectedShape,
-                      shortcuts['duplicate_polygon'], 'copy',
-                      'Create a duplicate of the selected polygons',
-                      enabled=False)
-        undoLastPoint = action('Undo last point', self.canvas.undoLastPoint,
-                               shortcuts['undo_last_point'], 'undo',
-                               'Undo last drawn point', enabled=False)
-        addPoint = action('Add Point to Edge', self.canvas.addPointToEdge,
-                          None, 'edit', 'Add point to the nearest edge',
-                          enabled=False)
+        allCreateModes = [
+            action(
+                f'Create {mode}',
+                functools.partial(self.toggleDrawMode, False, createMode=mode),
+                shortcuts[f'create_{mode}'], 'objects', f'Start drawing {mode}',
+                enable_condition=functools.partial(create_mode_enabled, mode)
+            )
+            for mode in Shape.all_types
+        ]
+        editMode = action(
+            'Edit Polygons', self.setEditMode, shortcuts['edit_polygon'],
+            'edit', 'Move and edit the selected polygons',
+            enable_condition=lambda: not self.canvas.is_empty() and not self.canvas.editing()
+        )
 
-        undo = action('Undo', self.undoShapeEdit, shortcuts['undo'], 'undo',
-                      'Undo last add and edit of shape', enabled=False)
+        delete = action(
+            'Delete Polygons', self.deleteSelectedShape, shortcuts['delete_polygon'],
+            'cancel', 'Delete the selected polygons',
+            enable_condition=lambda:
+            bool(self.canvas.selectedShapes) and not self.canvas.drawing()
+        )
 
-        hideAll = action('&Hide\nPolygons',
-                         functools.partial(self.togglePolygons, False),
-                         icon='eye', tip='Hide all polygons', enabled=False)
-        showAll = action('&Show\nPolygons',
-                         functools.partial(self.togglePolygons, True),
-                         icon='eye', tip='Show all polygons', enabled=False)
+        copy = action(
+            'Duplicate Polygons', self.copySelectedShape, shortcuts['duplicate_polygon'],
+            'copy', 'Create a duplicate of the selected polygons',
+            enable_condition=lambda: bool(self.canvas.selectedShapes)
+        )
+        undoLastPoint = action(
+            'Undo last point', self.canvas.undoLastPoint, shortcuts['undo_last_point'],
+            'undo', 'Undo last drawn point', enable_condition=lambda: self.canvas.drawing()
+        )
+        addPoint = action(
+            'Add Point to Edge', self.canvas.addPointToEdge, None,
+            'edit', 'Add point to the nearest edge', enabled=False
+        )
+        self.canvas.edgeSelected.connect(addPoint.setEnabled)
 
-        help = action('&Tutorial', self.tutorial, icon='help',
-                      tip='Show tutorial page')
+        undo = action(
+            'Undo', self.undoShapeEdit, shortcuts['undo'],
+            'undo', 'Undo last add and edit of shape',
+            enable_condition=lambda:
+            self.canvas.isShapeRestorable and not self.canvas.drawing()
+        )
+
+        hideAll = action(
+            '&Hide\nPolygons', functools.partial(self.togglePolygons, False),
+            icon='eye', tip='Hide all polygons',
+            enable_condition=lambda: self.canvas.has_shapes()
+        )
+        showAll = action(
+            '&Show\nPolygons', functools.partial(self.togglePolygons, True),
+            icon='eye', tip='Show all polygons',
+            enable_condition=lambda: self.canvas.has_shapes()
+        )
+
+        help = action(
+            '&Tutorial', self.tutorial, icon='help',
+            tip='Show tutorial page'
+        )
 
         zoom = QtWidgets.QWidgetAction(self)
         zoom.setDefaultWidget(self.zoomWidget)
@@ -339,27 +309,32 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.zoomWidget.setEnabled(False)
 
-        zoomIn = action('Zoom &In', functools.partial(self.addZoom, 1.1),
-                        shortcuts['zoom_in'], 'zoom-in',
-                        'Increase zoom level', enabled=False)
-        zoomOut = action('&Zoom Out', functools.partial(self.addZoom, 0.9),
-                         shortcuts['zoom_out'], 'zoom-out',
-                         'Decrease zoom level', enabled=False)
-        zoomOrg = action('&Original size',
-                         functools.partial(self.setZoom, 100),
-                         shortcuts['zoom_to_original'], 'zoom',
-                         'Zoom to original size', enabled=False)
-        fitWindow = action('&Fit Window', self.setFitWindow,
-                           shortcuts['fit_window'], 'fit-window',
-                           'Zoom follows window size', checkable=True,
-                           enabled=False)
-        fitWidth = action('Fit &Width', self.setFitWidth,
-                          shortcuts['fit_width'], 'fit-width',
-                          'Zoom follows window width',
-                          checkable=True, enabled=False)
+        def zoom_enabled():
+            return not self.canvas.is_empty()
+
+        zoomIn = action(
+            'Zoom &In', functools.partial(self.addZoom, 1.1), shortcuts['zoom_in'],
+            'zoom-in', 'Increase zoom level', enable_condition=zoom_enabled)
+        zoomOut = action(
+            '&Zoom Out', functools.partial(self.addZoom, 0.9), shortcuts['zoom_out'],
+            'zoom-out', 'Decrease zoom level', enable_condition=zoom_enabled
+        )
+        zoomOrg = action(
+            '&Original size', functools.partial(self.setZoom, 100), shortcuts['zoom_to_original'],
+            'zoom', 'Zoom to original size', enable_condition=zoom_enabled
+        )
+        fitWindow = action(
+            '&Fit Window', self.setFitWindow, shortcuts['fit_window'],
+            'fit-window', 'Zoom follows window size',
+            checkable=True, enable_condition=zoom_enabled
+        )
+        fitWidth = action(
+            'Fit &Width', self.setFitWidth, shortcuts['fit_width'],
+            'fit-width', 'Zoom follows window width',
+            checkable=True, enable_condition=zoom_enabled
+        )
         # Group zoom controls into a list for easier toggling.
-        zoomActions = (self.zoomWidget, zoomIn, zoomOut, zoomOrg,
-                       fitWindow, fitWidth)
+        zoomActions = (zoomIn, zoomOut, zoomOrg, fitWindow, fitWidth)
         self.zoomMode = self.FIT_WINDOW
         fitWindow.setChecked(Qt.Checked)
         self.scalers = {
@@ -369,9 +344,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.MANUAL_ZOOM: lambda: 1,
         }
 
-        edit = action('&Edit Label', self.editLabel, shortcuts['edit_label'],
-                      'edit', 'Modify the label of the selected polygon',
-                      enabled=False)
+        edit = action(
+            '&Edit Label', self.editLabel, shortcuts['edit_label'],
+            'edit', 'Modify the label of the selected polygon',
+            enable_condition=lambda: len(self.canvas.selectedShapes) == 1
+        )
         invertSelection = action('&Invert Selection', self.labelList.invertSelection,
                                  shortcuts['invert_selection'],
                                  'invert_selection', 'Invert selection of polygon labels',
@@ -380,20 +357,19 @@ class MainWindow(QtWidgets.QMainWindow):
                            'select_all', 'Select all polygon labels', enabled=True)
         shapeLineColor = action(
             'Shape &Line Color', self.chshapeLineColor, icon='color-line',
-            tip='Change the line color for this specific shape', enabled=False)
+            tip='Change the line color for this specific shape',
+            enable_condition=lambda: bool(self.canvas.selectedShapes)
+        )
         shapeFillColor = action(
             'Shape &Fill Color', self.chshapeFillColor, icon='color',
-            tip='Change the fill color for this specific shape', enabled=False)
-        fill_drawing = action(
-            'Fill Drawing Polygon',
-            lambda x: self.canvas.setFillDrawing(x),
-            None,
-            'color',
-            'Fill polygon while drawing',
-            checkable=True,
-            enabled=True,
+            tip='Change the fill color for this specific shape',
+            enable_condition=lambda: bool(self.canvas.selectedShapes)
         )
-        fill_drawing.setChecked(True)
+        fill_drawing = action(
+            'Fill Drawing Polygon', lambda x: self.canvas.setFillDrawing(x),
+            None, 'color', 'Fill polygon while drawing',
+            checkable=True, enabled=True
+        )
 
         # Lavel list context menu.
         labelMenu = QtWidgets.QMenu()
@@ -401,17 +377,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.labelList.customContextMenuRequested.connect(
             self.popLabelListMenu)
-
-        allCreateModes = (
-            createMode,
-            createRectangleMode,
-            createCircleMode,
-            createLineMode,
-            createPointMode,
-            createLineStripMode,
-            createCurveMode,
-            createFreeformMode,
-        )
 
         from types import SimpleNamespace
         # Store actions for further handling.
@@ -426,20 +391,13 @@ class MainWindow(QtWidgets.QMainWindow):
             invertSelection=invertSelection, selectAll=selectAll,
             copy=copy, undoLastPoint=undoLastPoint, undo=undo,
             addPoint=addPoint,
-            createMode=createMode, editMode=editMode,
-            createRectangleMode=createRectangleMode,
-            createCircleMode=createCircleMode,
-            createLineMode=createLineMode,
-            createPointMode=createPointMode,
-            createLineStripMode=createLineStripMode,
-            createCurveMode=createCurveMode,
-            createFreeformMode=createFreeformMode,
+            editMode=editMode,
             shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
             zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
             fitWindow=fitWindow, fitWidth=fitWidth,
             zoomActions=zoomActions,
             openNextImg=openNextImg, openPrevImg=openPrevImg,
-            fileMenuActions=(open_, opendir, save, saveAs, close, quit),
+            fileMenuActions=(open_, opendir, save, saveAs, close, quit_),
             tool=(),
             # Add actions here to take effect
             editMenu=(edit, copy, delete, None, undo, undoLastPoint, selectAll, invertSelection,
@@ -466,8 +424,6 @@ class MainWindow(QtWidgets.QMainWindow):
             onShapesPresent=(saveAs, hideAll, showAll),
         )
 
-        self.canvas.edgeSelected.connect(self.actions.addPoint.setEnabled)
-
         self.menus = SimpleNamespace(
             file=self.menu('&File'),
             edit=self.menu('&Edit'),
@@ -492,7 +448,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 close,
                 deleteFile,
                 None,
-                quit,
+                quit_,
             ),
         )
         utils.addActions(self.menus.help, (help,))
@@ -540,7 +496,7 @@ class MainWindow(QtWidgets.QMainWindow):
             save,
             deleteFile,
             None,
-            createMode,
+            allCreateModes[0],
             editMode,
             copy,
             delete,
@@ -648,16 +604,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.menus[0].clear()
         utils.addActions(self.canvas.menus[0], menu)
         self.menus.edit.clear()
-        actions = (
-            self.actions.createMode,
-            self.actions.createRectangleMode,
-            self.actions.createCircleMode,
-            self.actions.createLineMode,
-            self.actions.createPointMode,
-            self.actions.createLineStripMode,
-            self.actions.editMode,
-        )
-        utils.addActions(self.menus.edit, actions + self.actions.editMenu)
+        actions = self.actions.allCreateModes
+        utils.addActions(self.menus.edit, actions + list(self.actions.editMenu))
 
     def setDirty(self):
         if Config.get('auto_save') or self.actions.saveAuto.isChecked():
@@ -668,8 +616,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.saveLabels(label_file)
             return
         self.dirty = True
-        self.actions.save.setEnabled(True)
-        self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
+        self.actions.save.refresh()
+        self.actions.undo.refresh()
         title = __appname__
         if self.filename is not None:
             title = '{} - {}*'.format(title, self.filename)
@@ -677,29 +625,23 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setClean(self):
         self.dirty = False
-        self.actions.save.setEnabled(False)
-        self.actions.createMode.setEnabled(True)
-        self.actions.createRectangleMode.setEnabled(True)
-        self.actions.createCircleMode.setEnabled(True)
-        self.actions.createLineMode.setEnabled(True)
-        self.actions.createPointMode.setEnabled(True)
-        self.actions.createLineStripMode.setEnabled(True)
+        self.actions.save.refresh()
+        for mode in self.actions.allCreateModes:
+            mode.refresh()
         title = __appname__
         if self.filename is not None:
             title = '{} - {}'.format(title, self.filename)
         self.setWindowTitle(title)
 
-        if self.hasLabelFile():
-            self.actions.deleteFile.setEnabled(True)
-        else:
-            self.actions.deleteFile.setEnabled(False)
+        self.actions.deleteFile.refresh()
 
     def toggleActions(self, value=True):
         """Enable/Disable widgets which depend on an opened image."""
+        self.zoomWidget.setEnabled(value)
         for z in self.actions.zoomActions:
-            z.setEnabled(value)
+            z.refresh()
         for action in self.actions.onLoadActive:
-            action.setEnabled(value)
+            action.refresh()
 
     def queueEvent(self, function):
         QtCore.QTimer.singleShot(0, function)
@@ -735,47 +677,28 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setDirty()
             self.labelList.clear()
             self.loadShapes(self.canvas.shapes)
-        self.actions.undo.setEnabled(self.canvas.isShapeRestorable)
+        self.actions.undo.refresh()
 
     def tutorial(self):
         url = 'https://github.com/wkentaro/labelme/tree/master/examples/tutorial'  # NOQA
         webbrowser.open(url)
-
-    def toggleAddPointEnabled(self, enabled):
-        self.actions.addPoint.setEnabled(enabled)
 
     def toggleDrawingSensitive(self, drawing=True):
         """Toggle drawing sensitive.
 
         In the middle of drawing, toggling between modes should be disabled.
         """
-        self.actions.editMode.setEnabled(not drawing)
-        self.actions.undoLastPoint.setEnabled(drawing)
-        self.actions.undo.setEnabled(not drawing)
-        self.actions.delete.setEnabled(not drawing)
+        self.actions.editMode.refresh()
+        self.actions.undoLastPoint.refresh()
+        self.actions.undo.refresh()
+        self.actions.delete.refresh()
 
     def toggleDrawMode(self, edit=True, createMode='polygon'):
         self.canvas.setEditing(edit)
         self.canvas.createMode = createMode
-        self.actions.editMode.setEnabled(not edit)
-        if edit:
-            for action in self.actions.allCreateModes:
-                action.setEnabled(True)
-            return
-        modesMapping = {
-            'polygon': self.actions.createMode,
-            'rectangle': self.actions.createRectangleMode,
-            'line': self.actions.createLineMode,
-            'point': self.actions.createPointMode,
-            'circle': self.actions.createCircleMode,
-            'linestrip': self.actions.createLineStripMode,
-            'curve': self.actions.createCurveMode,
-            'freeform': self.actions.createFreeformMode
-        }
-        if createMode not in modesMapping:
-            raise ValueError('Unsupported createMode: %s' % createMode)
-        for action in self.actions.allCreateModes:
-            action.setEnabled(action != modesMapping[createMode])
+        self.actions.editMode.refresh()
+        for mode_action in self.actions.allCreateModes:
+            mode_action.refresh()
 
     def setEditMode(self):
         self.toggleDrawMode(True)
@@ -879,11 +802,11 @@ class MainWindow(QtWidgets.QMainWindow):
             item.setSelected(True)
         self._noSelectionSlot = False
         n_selected = len(self.canvas.selectedShapes)
-        self.actions.delete.setEnabled(n_selected)
-        self.actions.copy.setEnabled(n_selected)
-        self.actions.edit.setEnabled(n_selected == 1)
-        self.actions.shapeLineColor.setEnabled(n_selected)
-        self.actions.shapeFillColor.setEnabled(n_selected)
+        self.actions.delete.refresh()
+        self.actions.copy.refresh()
+        self.actions.edit.refresh()
+        self.actions.shapeLineColor.refresh()
+        self.actions.shapeFillColor.refresh()
 
     def mergeShapes(self, all_removed, added):
         self.remLabels(all_removed)
@@ -898,7 +821,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.labelList.addItem(item)
         # TODO: check that incoming label already exists, otherwise throw error
         for action in self.actions.onShapesPresent:
-            action.setEnabled(True)
+            action.refresh()
 
     def remLabels(self, shapes):
         for shape in shapes:
@@ -993,9 +916,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if text:
             self.labelList.clearSelection()
             self.addLabel(self.canvas.setLastLabel(form, annotation))
-            self.actions.editMode.setEnabled(True)
-            self.actions.undoLastPoint.setEnabled(False)
-            self.actions.undo.setEnabled(True)
+            self.actions.editMode.refresh()
+            self.actions.undoLastPoint.refresh()
+            self.actions.undo.refresh()
             self.setDirty()
         else:
             self.canvas.undoLastLine()
@@ -1215,7 +1138,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.mayContinue():
             return
 
-        if len(self.imageList) <= 0:
+        if not self.imageList:
             return
 
         filename = None
@@ -1344,7 +1267,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setClean()
         self.toggleActions(False)
         self.canvas.setEnabled(False)
-        self.actions.saveAs.setEnabled(False)
+        self.actions.saveAs.refresh()
 
     def getLabelFile(self):
         if self.filename.lower().endswith('.json'):
@@ -1445,7 +1368,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setDirty()
             if self.noShapes():
                 for action in self.actions.onShapesPresent:
-                    action.setEnabled(False)
+                    action.refresh()
 
     def chshapeLineColor(self):
         color = self.colorDialog.getColor(
@@ -1502,11 +1425,10 @@ class MainWindow(QtWidgets.QMainWindow):
         return lst
 
     def importDirImages(self, dirpath, pattern=None, load=True):
-        self.actions.openNextImg.setEnabled(True)
-        self.actions.openPrevImg.setEnabled(True)
-
         if not self.mayContinue() or not dirpath:
             return
+        self.actions.openNextImg.refresh()
+        self.actions.openPrevImg.refresh()
 
         self.lastOpenDir = dirpath
         self.filename = None

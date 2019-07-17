@@ -105,6 +105,9 @@ class Canvas(QtWidgets.QWidget):
     def is_empty(self):
         return self.pixmap is None
 
+    def has_shapes(self):
+        return bool(self.shapes)
+
     def storeShapes(self):
         shapesBackup = []
         for shape in self.shapes:

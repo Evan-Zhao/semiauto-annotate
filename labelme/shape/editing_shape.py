@@ -126,10 +126,14 @@ class EditingShape(Shape):
                 painter.fillPath(line_path1, EditingShape.def_color)
 
     def __getstate__(self):
-        raise RuntimeError('Editing shape should not be pickled.')
+        return dict(
+            points=self.points,
+            shape_type=self.shape_type
+        )
 
     def __setstate__(self, state):
-        raise RuntimeError('Editing shape should not be unpickled.')
+        self.__init__(state['shape_type'])
+        self.points = state['points']
 
     def __setitem__(self, key, value):
         self.points[key] = value

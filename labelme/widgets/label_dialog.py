@@ -516,9 +516,8 @@ class LabelDialog(QtWidgets.QDialog):
         self.pose_dialog.exec_()
 
     def validate(self):
-        result = self.ui.get_full_state()
-        if result is not None:
-            self._form, self._annotation = result
+        self._form, self._annotation = self.ui.get_full_state()
+        if self._form is not None:
             self.accept()
         else:
             QtWidgets.QMessageBox.warning(self, 'Error', 'Label form is not complete')
