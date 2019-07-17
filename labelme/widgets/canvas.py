@@ -730,4 +730,5 @@ class Canvas(QtWidgets.QWidget):
     def resetState(self):
         self.restoreCursor()
         self.shapesBackups = []
+        self.selectedShapes = []
         self.update()

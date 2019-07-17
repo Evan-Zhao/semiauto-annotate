@@ -289,6 +289,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def __getattr__(self, item):
         return getattr(self.ui, item)
 
+    def get_abs_filepath(self, filename):
+        from os.path import join, normpath
+        return normpath(join(self.lastOpenDir, filename))
+
     def menu(self, title, actions=None):
         menu = self.menuBar().addMenu(title)
         if actions:
@@ -469,7 +473,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if currIndex < len(self.imageList):
             filename = self.imageList[currIndex]
             if filename:
-                self.loadFile(filename)
+                self.loadFile(self.get_abs_filepath(filename))
 
     # React to canvas signals.
     def shapeSelectionChanged(self):
@@ -793,6 +797,8 @@ class MainWindow(QtWidgets.QMainWindow):
         Config.set('keep_prev', keep_prev)
 
     def openNextImg(self, _value=False, load=True):
+        from os.path import join
+
         keep_prev = Config.get('keep_prev')
         if QtGui.QGuiApplication.keyboardModifiers() == \
                 (QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier):
@@ -813,7 +819,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 filename = self.imageList[currIndex + 1]
             else:
                 filename = self.imageList[-1]
-        self.filename = filename
+        self.filename = self.get_abs_filepath(filename)
 
         if self.filename and load:
             self.loadFile(self.filename)
@@ -1087,8 +1093,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def importDirImages(self, dirpath, pattern=None, load=True):
         if not self.mayContinue() or not dirpath:
             return
-        self.lastOpenDir = dirpath
         self.filename = None
+        self.lastOpenDir = dirpath
         self.fileListWidget.clear()
         for filename in self.scanAllImages(dirpath):
             if pattern and pattern not in filename:
@@ -1114,9 +1120,10 @@ class MainWindow(QtWidgets.QMainWindow):
         images = []
 
         for root, dirs, files in os.walk(folderPath):
+            root_to_folder = os.path.relpath(root, folderPath)
             for file in files:
                 if file.lower().endswith(tuple(extensions)):
-                    relativePath = osp.join(root, file)
+                    relativePath = osp.join(root_to_folder, file)
                     images.append(relativePath)
         images.sort(key=lambda x: x.lower())
         return images
