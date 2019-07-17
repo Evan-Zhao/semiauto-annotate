@@ -1,15 +1,27 @@
-from .yolo_parser import YoloParser
 from .pose_estm_parser import PoseEstmParser
+from .yolo_parser import YoloParser
+
+from time import sleep
+from threading import Thread
 
 
 class ModelLoader(object):
-    def __init__(self):
+    @staticmethod
+    def _load(image_file, on_completion):
         from labelme.utils import Config
-
         labels = Config.get('labels').keys()
-        self.yolo = YoloParser(
+        yolo = YoloParser(
             'yolo3/output.json',
             accepted_label=labels
         )
-        self.pose_estm = PoseEstmParser('pose-estm/output.json')
-        self.data = self.yolo.data + self.pose_estm.data
+        pose_estm = PoseEstmParser('pose-estm/output.json')
+        sleep(5)
+        on_completion(yolo.data + pose_estm.data)
+
+    @staticmethod
+    def threaded_load(image_file, on_completion):
+        load_thread = Thread(
+            target=ModelLoader._load,
+            args=(image_file, on_completion)
+        )
+        load_thread.start()

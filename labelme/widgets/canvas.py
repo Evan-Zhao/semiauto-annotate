@@ -5,7 +5,7 @@ from qtpy import QtWidgets
 import labelme.utils
 from labelme import QT5
 from labelme.shape import Shape, PoseShape, EditingShape
-from labelme.custom_widgets.join_shapes_dialog import JoinShapesDialog
+from labelme.custom_widgets import JoinShapesDialog, LoadingDialog
 from labelme.utils import Config
 
 # TODO(unknown):
@@ -65,6 +65,8 @@ class Canvas(QtWidgets.QWidget):
         # 0: right-click without selection and dragging of shapes
         # 1: right-click with selection and dragging of shapes
         self.menus = (QtWidgets.QMenu(), QtWidgets.QMenu())
+        # Loading dialog
+        self.loading_dialog = LoadingDialog(self)
         # Set widget options.
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
@@ -95,7 +97,7 @@ class Canvas(QtWidgets.QWidget):
 
     def load_snapshot(self, value):
         # Loading image clears all shapes, so it goes first.
-        self.load_image_file(value['image_file'], load_dl_hint=False)
+        self.load_image_file(value['image_file'], load_model_hint=False)
         self.loadShapes(value['shapes'])
 
     def is_empty(self):
@@ -298,10 +300,14 @@ class Canvas(QtWidgets.QWidget):
         self.repaint()
 
     def mousePressEvent(self, ev):
-        if QT5:
-            pos = self.transformPos(ev.localPos())
-        else:
-            pos = self.transformPos(ev.posF())
+        try:
+            if QT5:
+                pos = self.transformPos(ev.localPos())
+            else:
+                pos = self.transformPos(ev.posF())
+        except AttributeError:
+            return
+
         # Transform pointer location by image offset
         pos -= self._imagePos
         if ev.button() == QtCore.Qt.LeftButton:
@@ -681,15 +687,22 @@ class Canvas(QtWidgets.QWidget):
             self.drawingPolygon.emit(False)
         self.repaint()
 
-    def load_image_file(self, image_file, load_dl_hint=True):
+    def on_model_result_received(self, model_data):
+        self.loading_dialog.model_hint_loaded.emit()
+        self.shapes.extend(model_data)
+
+    def load_image_file(self, image_file, load_model_hint=True):
         self._image_file = image_file
         self.pixmap = image_file.pixmap
         if not Config.get('keep_prev'):
             self.shapes = []
-        if load_dl_hint:
+        if load_model_hint:
             from labelme.backend import ModelLoader
-            model = ModelLoader()
-            self.shapes.extend(model.data)
+            from labelme.custom_widgets import LoadingDialog
+            ModelLoader.threaded_load(
+                image_file, on_completion=self.on_model_result_received
+            )
+            self.loading_dialog.exec_()
         self.repaint()
 
     def loadShapes(self, shapes, replace=True):

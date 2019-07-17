@@ -37,11 +37,11 @@ install_requires = [
     'termcolor',
     'jsonpickle',
     'scipy',
-    'opencv',
+    # 'opencv',
     'configobj',
     'keras',
     'tensorflow',
-    'caffe',
+    # 'caffe',
     'sip'
 ]
 
