@@ -136,7 +136,8 @@ shortcuts:
   invert_selection: Ctrl+I
   select_all: Ctrl+A
   delete_polygon: Delete
-  duplicate_polygon: Ctrl+C
+  copy: Ctrl+C
+  paste: Ctrl+V
   undo: Ctrl+Z
   undo_last_point: [Ctrl+Z, Backspace]
   edit_label: Ctrl+E

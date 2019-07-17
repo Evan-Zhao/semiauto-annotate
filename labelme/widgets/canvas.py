@@ -478,17 +478,27 @@ class Canvas(QtWidgets.QWidget):
         return deleted_shapes
 
     def copySelectedShapes(self):
-        if self.selectedShapes:
-            self.selectedShapesCopy = [s.copy() for s in self.selectedShapes]
-            self.boundedShiftShapes(self.selectedShapesCopy)
-            self.endMove(copy=True)
-        return self.selectedShapes
+        import jsonpickle
+        return jsonpickle.encode((
+            self._image_file.filename,
+            self.selectedShapes
+        ))
 
-    def boundedShiftShapes(self, shapes):
+    def pasteShapes(self, shapes_json):
+        import jsonpickle
+        source_filename, shapes = jsonpickle.decode(shapes_json)
+        if source_filename == self._image_file.filename:
+            self.boundedShiftShapes(shapes)
+        self.loadShapes(shapes, replace=False)
+        self.selectedShapes = shapes
+        self.repaint()
+        return shapes
+
+    def boundedShiftShapes(self, shapes, margin=5.0):
         # Try to move in one direction, and if it fails in another.
         # Give up if both fail.
         point = shapes[0][0]
-        offset = QPointF(2.0, 2.0)
+        offset = QPointF(margin, margin)
         self._prevPoint = point
         if not self.boundedMoveShapes(shapes, point - offset):
             self.boundedMoveShapes(shapes, point + offset)

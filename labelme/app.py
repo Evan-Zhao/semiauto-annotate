@@ -532,7 +532,20 @@ class MainWindow(QtWidgets.QMainWindow):
             return False
 
     def copySelectedShape(self):
-        added_shapes = self.canvas.copySelectedShapes()
+        from qtpy.QtGui import QGuiApplication
+
+        shapes_json = self.canvas.copySelectedShapes()
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setText(shapes_json)
+
+    def pasteShape(self):
+        from qtpy.QtGui import QGuiApplication
+
+        clipboard = QGuiApplication.clipboard()
+        if not clipboard.ownsClipboard():
+            return
+        shapes_json = clipboard.text()
+        added_shapes = self.canvas.pasteShapes(shapes_json)
         self.labelList.clearSelection()
         for shape in added_shapes:
             self.addLabel(shape)
@@ -1290,9 +1303,14 @@ class MainWindow(QtWidgets.QMainWindow):
             enable_condition=lambda: len(self.canvas.selectedShapes) == 1
         )
         copy = action(
-            'Duplicate Polygons', self.copySelectedShape, shortcuts['duplicate_polygon'],
-            'copy', 'Create a duplicate of the selected polygons',
+            'Copy Polygons', self.copySelectedShape, shortcuts['copy'],
+            'copy', 'Copy selected polygons to clipboard',
             enable_condition=lambda: bool(self.canvas.selectedShapes)
+        )
+        paste = action(
+            'Paste Polygons', self.pasteShape, shortcuts['paste'],
+            'paste', 'Paste polygon on canvas',
+            enable_condition=lambda: not self.canvas.is_empty()
         )
         delete = action(
             'Delete Polygons', self.deleteSelectedShape, shortcuts['delete_polygon'],
@@ -1337,7 +1355,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         edit_menu = (
             allCreateModes,
-            (edit, copy, delete),
+            (edit, copy, delete, paste),
             (undo, undoLastPoint, selectAll, invertSelection),
             (color1, color2),
             (toggle_keep_prev_mode,)
