@@ -1,12 +1,10 @@
-from math import sqrt
 import os.path as osp
+from math import sqrt
 
 import numpy as np
-
 from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
-
 
 here = osp.dirname(osp.abspath(__file__))
 
@@ -46,49 +44,68 @@ class BindingQAction(QtWidgets.QAction):
             super().setEnabled(value)
 
 
-def newAction(parent, text, slot=None, shortcut=None, icon=None,
-              tip=None, checkable=False, enabled=True, enable_condition=None):
-    """Create a new action and assign callbacks, shortcuts, etc."""
-    a = BindingQAction(enable_condition, text, parent)
-    if icon is not None:
-        a.setIconText(text.replace(' ', '\n'))
-        a.setIcon(newIcon(icon))
-    if shortcut is not None:
-        if isinstance(shortcut, (list, tuple)):
-            a.setShortcuts(shortcut)
+class ActionStorage(object):
+    def __init__(self, parent):
+        self.parent = parent
+        self.actions = []
+
+    def make_action(self, text, slot=None, shortcut=None, icon=None,
+                    tip=None, checkable=False, enabled=True, enable_condition=None):
+        """Create a new action and assign callbacks, shortcuts, etc."""
+        a = BindingQAction(enable_condition, text, self.parent)
+        if icon is not None:
+            a.setIconText(text.replace(' ', '\n'))
+            a.setIcon(newIcon(icon))
+        if shortcut is not None:
+            if isinstance(shortcut, (list, tuple)):
+                a.setShortcuts(shortcut)
+            else:
+                a.setShortcut(shortcut)
+        if tip is not None:
+            a.setToolTip(tip)
+            a.setStatusTip(tip)
+        if slot is not None:
+            a.triggered.connect(slot)
+        if checkable:
+            a.setCheckable(True)
+        if enable_condition:
+            a.refresh()
         else:
-            a.setShortcut(shortcut)
-    if tip is not None:
-        a.setToolTip(tip)
-        a.setStatusTip(tip)
-    if slot is not None:
-        a.triggered.connect(slot)
-    if checkable:
-        a.setCheckable(True)
-    if enable_condition:
-        a.refresh()
-    else:
-        a.setEnabled(enabled)
-    return a
+            a.setEnabled(enabled)
+        self.actions.append(a)
+        return a
+
+    def make_group(self, *args, exclusive=False):
+        group = QtWidgets.QActionGroup(self.parent)
+        for action in args:
+            group.addAction(action)
+        group.setExclusive(exclusive)
+        return group
+
+    def refresh_all(self):
+        for action in self.actions:
+            action.refresh()
 
 
-def addActions(widget, actions):
+def addActions(widget, *actions):
+    def add_actions_or_menus(widget_, actions_):
+        for action_ in actions_:
+            if isinstance(action_, QtWidgets.QMenu):
+                widget_.addMenu(action_)
+            else:
+                widget_.addAction(action_)
+
+    from typing import Iterable
     for action in actions:
-        if action is None:
-            widget.addSeparator()
-        elif isinstance(action, QtWidgets.QMenu):
-            widget.addMenu(action)
-        else:
-            widget.addAction(action)
+        if issubclass(type(action), Iterable):
+            add_actions_or_menus(widget, action)
+        elif isinstance(action, QtWidgets.QActionGroup):
+            widget.addActions(action.actions())
+        widget.addSeparator()
 
 
 def labelValidator():
     return QtGui.QRegExpValidator(QtCore.QRegExp(r'^[^ \t].+'), None)
-
-
-class struct(object):
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
 
 
 def distance(p):
