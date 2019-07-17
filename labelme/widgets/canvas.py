@@ -109,12 +109,10 @@ class Canvas(QtWidgets.QWidget):
         return bool(self.shapes)
 
     def storeShapes(self):
-        shapesBackup = []
-        for shape in self.shapes:
-            shapesBackup.append(shape.copy())
+        from copy import deepcopy
         if len(self.shapesBackups) >= 10:
             self.shapesBackups = self.shapesBackups[-9:]
-        self.shapesBackups.append(shapesBackup)
+        self.shapesBackups.append(deepcopy(self.shapes))
 
     @property
     def isShapeRestorable(self):
@@ -123,11 +121,11 @@ class Canvas(QtWidgets.QWidget):
         return True
 
     def restoreShape(self):
+        from copy import deepcopy
         if not self.isShapeRestorable:
             return False
         self.shapesBackups.pop()  # latest
-        shapesBackup = self.shapesBackups.pop()
-        self.shapes = shapesBackup
+        self.shapes = deepcopy(self.shapesBackups[-1])
         self.selectedShapes = []
         self.repaint()
         return True
@@ -152,7 +150,11 @@ class Canvas(QtWidgets.QWidget):
 
     def setEditing(self, value=True):
         self._mode = self.EDIT if value else self.CREATE
-        if not value:  # Create
+        if value:
+            self._current = None
+            self.drawingPolygon.emit(False)
+            self.update()
+        else:  # Create
             self.unHighlight()
             self.deSelectShape()
 
