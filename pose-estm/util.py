@@ -1,5 +1,5 @@
 import numpy as np
-from cStringIO import StringIO
+from io import StringIO
 import PIL.Image
 from IPython.display import Image, display
 
@@ -75,7 +75,3 @@ def padRightDownCorner(img, stride, padValue):
     img_padded = np.concatenate((img_padded, pad_right), axis=1)
 
     return img_padded, pad
-
-#if __name__ == "__main__":
-#    config_reader()
-
