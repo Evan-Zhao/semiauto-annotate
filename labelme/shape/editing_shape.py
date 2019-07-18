@@ -21,6 +21,8 @@ class EditingShape(Shape):
     @classmethod
     def undo_into_editing_point(cls, shape):
         ret = cls(shape.shape_type)
+        if shape.shape_type == 'freeform':
+            return None
         if shape.shape_type == 'polygon':
             ret.points = shape.points
         elif shape.points:
@@ -83,6 +85,8 @@ class EditingShape(Shape):
         self.points[-1] = value
 
     def undo_point(self):
+        if self.shape_type == 'freeform':
+            self.points = []
         if self.points:
             self.points.pop()
             return True

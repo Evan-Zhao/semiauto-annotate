@@ -1,3 +1,5 @@
+from math import sqrt
+
 from qtpy import QtWidgets
 from qtpy.QtCore import Qt, Signal, QPointF, QRectF
 from qtpy.QtGui import QPainter
@@ -34,6 +36,7 @@ class Canvas(QtWidgets.QWidget):
     # polygon, rectangle, line, or point
     _createMode = 'polygon'
     _fill_drawing = False
+    _freeform_dist = 0.5
 
     def __init__(self, *args, **kwargs):
         super(Canvas, self).__init__(*args, **kwargs)
@@ -169,7 +172,7 @@ class Canvas(QtWidgets.QWidget):
     def mouseMoveEvent(self, ev):
         """Update line with last point and current coordinates."""
 
-        def drawPolygon(p):
+        def drawPolygon(p, last_p):
             if not self._current:
                 return
 
@@ -186,6 +189,11 @@ class Canvas(QtWidgets.QWidget):
                 self.overrideCursor(CURSOR_POINT)
                 self._current.highlightVertex(0, Shape.NEAR_VERTEX)
             self._current.update_cursor(p)
+            if self.createMode == 'freeform' and Qt.LeftButton & ev.buttons():
+                diff = p - last_p
+                dist = sqrt(diff.x() ** 2 + diff.y() ** 2)
+                if dist > Canvas._freeform_dist:
+                    self._current.add_point()
             self._current.highlightClear()
             self.repaint()
 
@@ -242,7 +250,7 @@ class Canvas(QtWidgets.QWidget):
         relPos = pos - self._imagePos
         # Polygon drawing.
         if self.drawing():
-            drawPolygon(relPos)
+            drawPolygon(relPos, prevPos - self._imagePos)
         # Polygon copy moving.
         elif Qt.RightButton & ev.buttons():
             if self.selectedShapesCopy and self._prevPoint:
@@ -359,8 +367,11 @@ class Canvas(QtWidgets.QWidget):
                 # Cancel the move by deleting the shadow copy.
                 self.selectedShapesCopy = []
                 self.repaint()
-        elif ev.button() == Qt.LeftButton and self.selectedShapes:
-            self.overrideCursor(CURSOR_GRAB)
+        elif ev.button() == Qt.LeftButton:
+            if self.selectedShapes:
+                self.overrideCursor(CURSOR_GRAB)
+            elif self.createMode == 'freeform':
+                self.finalise()
         if self._movingShape:
             self.storeShapes()
             self.shapeMoved.emit()
