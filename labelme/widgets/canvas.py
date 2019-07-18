@@ -170,10 +170,10 @@ class Canvas(QtWidgets.QWidget):
         """Update line with last point and current coordinates."""
 
         def drawPolygon(p):
-            self.overrideCursor(CURSOR_DRAW)
             if not self._current:
                 return
 
+            self.overrideCursor(CURSOR_DRAW)
             if self.outOfPixmap(p):
                 # Don't allow the user to draw outside the pixmap.
                 # Project the point to the pixmap's edges.
@@ -186,8 +186,8 @@ class Canvas(QtWidgets.QWidget):
                 self.overrideCursor(CURSOR_POINT)
                 self._current.highlightVertex(0, Shape.NEAR_VERTEX)
             self._current.update_cursor(p)
-            self.repaint()
             self._current.highlightClear()
+            self.repaint()
 
         def findHighlight(p):
             for shape in reversed([s for s in self.shapes if self.isCanvasVisible(s)]):
@@ -224,6 +224,7 @@ class Canvas(QtWidgets.QWidget):
                     self._hShape.highlightClear()
                     self.update()
                 self._hVertex, self._hShape, self._hEdge = None, None, None
+                self.overrideCursor(CURSOR_DEFAULT)
             self.edgeSelected.emit(self._hEdge is not None)
 
         try:
@@ -239,7 +240,6 @@ class Canvas(QtWidgets.QWidget):
         self._prevMovePoint = pos
         # Transform pointer location by image offset
         relPos = pos - self._imagePos
-        self.restoreCursor()
         # Polygon drawing.
         if self.drawing():
             drawPolygon(relPos)
@@ -250,8 +250,7 @@ class Canvas(QtWidgets.QWidget):
                 self.boundedMoveShapes(self.selectedShapesCopy, relPos)
                 self.repaint()
             elif self.selectedShapes:
-                self.selectedShapesCopy = \
-                    [s.copy() for s in self.selectedShapes]
+                self.selectedShapesCopy = [s.copy() for s in self.selectedShapes]
                 self.repaint()
         # Polygon/Vertex moving.
         elif Qt.LeftButton & ev.buttons():
@@ -729,7 +728,6 @@ class Canvas(QtWidgets.QWidget):
         self.repaint()
 
     def overrideCursor(self, cursor):
-        self.restoreCursor()
         self._cursor = cursor
         QtWidgets.QApplication.setOverrideCursor(cursor)
 
