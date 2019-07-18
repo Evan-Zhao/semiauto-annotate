@@ -826,9 +826,7 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = QtWidgets.QFileDialog.getOpenFileName(
             self, '%s - Choose Image or Label file' % __appname__,
             path, filters)
-        if QT5:
-            filename, _ = filename
-        filename = str(filename)
+        filename = str(filename[0])
         if filename:
             self.loadFile(filename)
 

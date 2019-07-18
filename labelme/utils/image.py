@@ -95,7 +95,6 @@ class ImageFile(object):
     @staticmethod
     def _read_data(filename):
         import os.path as osp
-        from labelme import PY2, QT4
 
         try:
             image_pil = PIL.Image.open(filename)
