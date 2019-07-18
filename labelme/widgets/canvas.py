@@ -5,7 +5,6 @@ from qtpy.QtCore import Qt, Signal, QPointF, QRectF
 from qtpy.QtGui import QPainter
 
 import labelme.utils
-from labelme import QT5
 from labelme.custom_widgets import JoinShapesDialog, LoadingDialog
 from labelme.shape import Shape, PoseShape, EditingShape
 from labelme.utils import Config
@@ -236,10 +235,7 @@ class Canvas(QtWidgets.QWidget):
             self.edgeSelected.emit(self._hEdge is not None)
 
         try:
-            if QT5:
-                pos = self.transformPos(ev.localPos())
-            else:
-                pos = self.transformPos(ev.posF())
+            pos = self.transformPos(ev.localPos())
         except AttributeError:
             return
 
@@ -317,10 +313,7 @@ class Canvas(QtWidgets.QWidget):
 
     def mousePressEvent(self, ev):
         try:
-            if QT5:
-                pos = self.transformPos(ev.localPos())
-            else:
-                pos = self.transformPos(ev.posF())
+            pos = self.transformPos(ev.localPos())
         except AttributeError:
             return
 
@@ -649,31 +642,16 @@ class Canvas(QtWidgets.QWidget):
         return super(Canvas, self).minimumSizeHint()
 
     def wheelEvent(self, ev):
-        if QT5:
-            mods = ev.modifiers()
-            delta = ev.angleDelta()
-            if Qt.ControlModifier == int(mods):
-                # with Ctrl/Command key
-                # zoom
-                self.zoomRequest.emit(delta.y(), ev.pos())
-            else:
-                # scroll
-                self.scrollRequest.emit(delta.x(), Qt.Horizontal)
-                self.scrollRequest.emit(delta.y(), Qt.Vertical)
+        mods = ev.modifiers()
+        delta = ev.angleDelta()
+        if Qt.ControlModifier == int(mods):
+            # with Ctrl/Command key
+            # zoom
+            self.zoomRequest.emit(delta.y(), ev.pos())
         else:
-            if ev.orientation() == Qt.Vertical:
-                mods = ev.modifiers()
-                if Qt.ControlModifier == int(mods):
-                    # with Ctrl/Command key
-                    self.zoomRequest.emit(ev.delta(), ev.pos())
-                else:
-                    self.scrollRequest.emit(
-                        ev.delta(),
-                        Qt.Horizontal
-                        if (Qt.ShiftModifier == int(mods))
-                        else Qt.Vertical)
-            else:
-                self.scrollRequest.emit(ev.delta(), Qt.Horizontal)
+            # scroll
+            self.scrollRequest.emit(delta.x(), Qt.Horizontal)
+            self.scrollRequest.emit(delta.y(), Qt.Vertical)
         ev.accept()
 
     def keyPressEvent(self, ev):

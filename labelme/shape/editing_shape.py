@@ -15,7 +15,7 @@ def fit_bezier(points):
     from itertools import groupby
 
     coords = np.array([(p.x(), p.y()) for p in points]).transpose()
-    ((t, c, k), _), fp, _, _ = splprep(coords, full_output=True)
+    ((t, c, k), _), _, _, _ = splprep(coords, full_output=True)
     c = np.array(c).transpose()
     unique_t = [g[0] for g in groupby(t)]
     b = BSpline(t, c, k)
@@ -25,7 +25,6 @@ def fit_bezier(points):
 class EditingShape(Shape):
     # The following class variables influence the drawing of all shape objects.
     must_close = ['polygon', 'rectangle', 'point', 'line', 'circle']
-    manual_close = ['polygon', 'curve', 'freeform']
 
     def __init__(self, shape_type, init_point=None):
         points = [init_point] if init_point else []

@@ -3,7 +3,6 @@ import os.path as osp
 import jsonpickle
 from qtpy import QtCore
 
-from labelme import PY2
 from labelme import utils
 from labelme._version import __version__
 
@@ -26,7 +25,7 @@ class LabelFile(object):
         if not QtCore.QFile.exists(filename) or not LabelFile.is_label_file(filename):
             raise LabelFileError()
         try:
-            with open(filename, 'rb' if PY2 else 'r') as f:
+            with open(filename, 'r') as f:
                 data = jsonpickle.decode(f.read())
         except Exception as e:
             raise LabelFileError(e)
@@ -45,7 +44,7 @@ class LabelFile(object):
                 '__version__': __version__,
                 'data': main_snapshot
             }
-            with open(filename, 'wb' if PY2 else 'w') as f:
+            with open(filename, 'w') as f:
                 f.write(jsonpickle.encode(data))
         except Exception as e:
             raise LabelFileError(e)

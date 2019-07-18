@@ -1,86 +1,39 @@
 from __future__ import print_function
 
 import distutils.spawn
+import importlib
 import os.path
-from setuptools import find_packages
-from setuptools import setup
 import shlex
 import subprocess
 import sys
 
-
-PY3 = sys.version_info[0] == 3
-PY2 = sys.version_info[0] == 2
-assert PY3 or PY2
-
+from setuptools import find_packages
+from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 version_file = os.path.join(here, 'labelme', '_version.py')
-if PY3:
-    import importlib
-    version = importlib.machinery.SourceFileLoader(
-        '_version', version_file
-    ).load_module().__version__
-else:
-    assert PY2
-    import imp
-    version = imp.load_source('_version', version_file).__version__
+
+version = importlib.machinery.SourceFileLoader(
+    '_version', version_file
+).load_module().__version__
 del here
 
-
 install_requires = [
-    'matplotlib',
-    'numpy',
-    'Pillow>=2.8.0',
-    'PyYAML',
-    'qtpy',
+    'matplotlib>=3.1',
+    'numpy>=1.16',
+    'Pillow>=2.8',
+    'PyYAML>=5.1',
+    'qtpy>=1.8',
     'termcolor',
-    'jsonpickle',
-    'scipy',
-    # 'opencv',
+    'jsonpickle>=1.2',
+    'scipy>=1.2',
     'configobj',
     'keras',
-    'tensorflow',
-    # 'caffe',
-    'sip'
+    'tensorflow>=1.8',
+    'sip',
+    'pyqt5>=5.12',
+    'opencv-python'
 ]
-
-# Find python binding for qt with priority:
-# PyQt5 -> PySide2 -> PyQt4,
-# and PyQt5 is automatically installed on Python3.
-QT_BINDING = None
-
-try:
-    import PyQt5  # NOQA
-    QT_BINDING = 'pyqt5'
-except ImportError:
-    pass
-
-if QT_BINDING is None:
-    try:
-        import PySide2  # NOQA
-        QT_BINDING = 'pyside2'
-    except ImportError:
-        pass
-
-if QT_BINDING is None:
-    try:
-        import PyQt4  # NOQA
-        QT_BINDING = 'pyqt4'
-    except ImportError:
-        if PY2:
-            print(
-                'Please install PyQt5, PySide2 or PyQt4 for Python2.\n'
-                'Note that PyQt5 can be installed via pip for Python3.',
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        assert PY3
-        # PyQt5 can be installed via pip for Python3
-        install_requires.append('PyQt5')
-        QT_BINDING = 'pyqt5'
-del QT_BINDING
-
 
 if sys.argv[1] == 'release':
     if not distutils.spawn.find_executable('twine'):
@@ -113,16 +66,17 @@ def get_long_description():
         return long_description
 
 
+# TODO: update descriptions
 setup(
-    name='labelme',
+    name='semiauto_annotate',
     version=version,
     packages=find_packages(),
-    description='Image Polygonal Annotation with Python',
+    description='Semi-automatic Image Annotation with Python',
     long_description=get_long_description(),
     long_description_content_type='text/markdown',
-    author='Kentaro Wada',
-    author_email='www.kentaro.wada@gmail.com',
-    url='https://github.com/wkentaro/labelme',
+    author='Yifan Zhao, Shucheng Zhong',
+    author_email='evanzhao@umich.edu',
+    url='',
     install_requires=install_requires,
     license='GPLv3',
     keywords='Image Annotation, Machine Learning',
@@ -131,7 +85,6 @@ setup(
         'Intended Audience :: Developers',
         'Natural Language :: English',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
@@ -144,6 +97,8 @@ setup(
             'labelme_draw_label_png=labelme.cli.draw_label_png:main',
             'labelme_json_to_dataset=labelme.cli.json_to_dataset:main',
             'labelme_on_docker=labelme.cli.on_docker:main',
+            'pose_estm=pose_estm.pose_detection:main',
+            'yolo=yolo.yolo_video:main'
         ],
     },
 )

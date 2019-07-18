@@ -7,7 +7,6 @@ import PIL.Image
 import PIL.ImageOps
 
 from .config import Config
-from labelme import PY2, QT4
 
 
 def img_b64_to_arr(img_b64):
@@ -27,17 +26,6 @@ def img_arr_to_b64(img_arr):
     else:
         img_b64 = base64.encodestring(img_bin)
     return img_b64
-
-
-def img_data_to_png_data(img_data):
-    with io.BytesIO() as f:
-        f.write(img_data)
-        img = PIL.Image.open(f)
-
-        with io.BytesIO() as f:
-            img.save(f, 'PNG')
-            f.seek(0)
-            return f.read()
 
 
 def apply_exif_orientation(image):
@@ -119,9 +107,7 @@ class ImageFile(object):
 
         with io.BytesIO() as f:
             ext = osp.splitext(filename)[1].lower()
-            if PY2 and QT4:
-                extension = 'PNG'
-            elif ext in ['.jpg', '.jpeg']:
+            if ext in ['.jpg', '.jpeg']:
                 extension = 'JPEG'
             else:
                 extension = 'PNG'
@@ -158,8 +144,6 @@ class ImageFile(object):
         # osp.join(osp.dirname(filename), data['imagePath'])
         if state['image_data'] is not None:
             self.data = base64.b64decode(state['image_data'])
-            if PY2 and QT4:
-                self.data = img_data_to_png_data(self.data)
         else:
             self.data = self._read_data(state['image_path'])
         self.image = self._to_image(self.data)

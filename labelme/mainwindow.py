@@ -11,7 +11,6 @@ from qtpy import QtWidgets
 from qtpy.QtCore import Qt
 
 import labelme.utils as utils
-from labelme import QT5
 from labelme import __appname__
 from labelme.config import get_config
 from labelme.logger import logger
@@ -212,7 +211,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.recentFiles = self.settings.value('recentFiles', []) or []
         self.lineColor = QtGui.QColor(self.settings.value('line/color', None))
         self.fillColor = QtGui.QColor(self.settings.value('fill/color', None))
-        self.zoom_level = 100
         self.imagePath = None
         self.maxRecent = 7
 
@@ -294,9 +292,6 @@ class MainWindow(QtWidgets.QMainWindow):
         return toolbar
 
     # Support Functions
-
-    def noShapes(self):
-        return not self.labelList.itemsToShapes
 
     def setDirty(self):
         if Config.get('auto_save') or self.saveAuto.isChecked():
@@ -1115,7 +1110,7 @@ class MainWindow(QtWidgets.QMainWindow):
                       for fmt in QtGui.QImageReader.supportedImageFormats()]
         images = []
 
-        for root, dirs, files in os.walk(folderPath):
+        for root, _, files in os.walk(folderPath):
             root_to_folder = os.path.relpath(root, folderPath)
             for file in files:
                 if file.lower().endswith(tuple(extensions)):

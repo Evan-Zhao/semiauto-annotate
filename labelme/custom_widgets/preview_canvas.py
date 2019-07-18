@@ -2,7 +2,6 @@ from qtpy import QtCore
 from qtpy import QtGui
 from qtpy import QtWidgets
 
-from labelme import QT5
 from labelme.shape import Shape
 from labelme.utils import Config
 
@@ -16,7 +15,6 @@ class PreviewCanvas(QtWidgets.QWidget):
 
     def __init__(self, no_highlight=False, *args, **kwargs):
         self._epsilon = Config.get('epsilon', default=10.0)
-        self._label_color = Config.get('label_color')
         super(PreviewCanvas, self).__init__(*args, **kwargs)
         # Initialise local state.
         self._no_highlight = no_highlight
@@ -69,10 +67,7 @@ class PreviewCanvas(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, ev):
         try:
-            if QT5:
-                pos = self.transformPos(ev.localPos())
-            else:
-                pos = self.transformPos(ev.posF())
+            pos = self.transformPos(ev.localPos())
         except AttributeError:
             return
 
@@ -110,10 +105,7 @@ class PreviewCanvas(QtWidgets.QWidget):
             self.hVertex, self.hShape = None, None
 
     def mousePressEvent(self, ev):
-        if QT5:
-            pos = self.transformPos(ev.localPos())
-        else:
-            pos = self.transformPos(ev.posF())
+        pos = self.transformPos(ev.localPos())
         # Transform pointer location by image offset
         pos -= self._imagePos
         if ev.button() == QtCore.Qt.LeftButton:
@@ -195,31 +187,16 @@ class PreviewCanvas(QtWidgets.QWidget):
         return super(PreviewCanvas, self).minimumSizeHint()
 
     def wheelEvent(self, ev):
-        if QT5:
-            mods = ev.modifiers()
-            delta = ev.angleDelta()
-            if QtCore.Qt.ControlModifier == int(mods):
-                # with Ctrl/Command key
-                # zoom
-                self.zoomRequest.emit(delta.y(), ev.pos())
-            else:
-                # scroll
-                self.scrollRequest.emit(delta.x(), QtCore.Qt.Horizontal)
-                self.scrollRequest.emit(delta.y(), QtCore.Qt.Vertical)
+        mods = ev.modifiers()
+        delta = ev.angleDelta()
+        if QtCore.Qt.ControlModifier == int(mods):
+            # with Ctrl/Command key
+            # zoom
+            self.zoomRequest.emit(delta.y(), ev.pos())
         else:
-            if ev.orientation() == QtCore.Qt.Vertical:
-                mods = ev.modifiers()
-                if QtCore.Qt.ControlModifier == int(mods):
-                    # with Ctrl/Command key
-                    self.zoomRequest.emit(ev.delta(), ev.pos())
-                else:
-                    self.scrollRequest.emit(
-                        ev.delta(),
-                        QtCore.Qt.Horizontal
-                        if (QtCore.Qt.ShiftModifier == int(mods))
-                        else QtCore.Qt.Vertical)
-            else:
-                self.scrollRequest.emit(ev.delta(), QtCore.Qt.Horizontal)
+            # scroll
+            self.scrollRequest.emit(delta.x(), QtCore.Qt.Horizontal)
+            self.scrollRequest.emit(delta.y(), QtCore.Qt.Vertical)
         ev.accept()
 
     def replace_and_focus_shape(self, shape: Shape, padding: float = 40.0):
