@@ -1,5 +1,5 @@
 from qtpy.QtGui import QColor, QPen, QPainterPath
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QPointF
 
 from .bezier import BezierB
 from .shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
@@ -7,6 +7,19 @@ from .shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
 DEFAULT_LAST_LINE_COLOR = QColor(0, 0, 255)
 FREEFORM_LINE_COLOR = QColor(Qt.darkGray)
 FREEFORM_FILL_COLOR = QColor(Qt.lightGray)
+
+
+def fit_bezier(points):
+    import numpy as np
+    from scipy.interpolate import splprep, BSpline
+    from itertools import groupby
+
+    coords = np.array([(p.x(), p.y()) for p in points]).transpose()
+    ((t, c, k), _), fp, _, _ = splprep(coords, full_output=True)
+    c = np.array(c).transpose()
+    unique_t = [g[0] for g in groupby(t)]
+    b = BSpline(t, c, k)
+    return [QPointF(x, y) for x, y in b(unique_t)]
 
 
 class EditingShape(Shape):
@@ -32,7 +45,12 @@ class EditingShape(Shape):
         return ret
 
     def to_immutable_point(self):
-        points = self.points[:-1] if self.shape_type == 'polygon' else self.points
+        if self.shape_type == 'freeform':
+            points = fit_bezier(self.points[:-1])
+        elif self.shape_type == 'polygon':
+            points = self.points[:-1]
+        else:
+            points = self.points
         return Shape(points, self.form, self.shape_type)
 
     @property

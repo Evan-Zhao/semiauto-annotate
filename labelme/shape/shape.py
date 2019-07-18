@@ -1,7 +1,7 @@
 import copy
 import math
 
-from qtpy.QtCore import QRectF
+from qtpy.QtCore import QRectF, QPointF
 from qtpy.QtGui import QPainterPath, QPen, QColor
 
 import labelme.utils
@@ -117,7 +117,7 @@ class Shape(object):
             line_path.moveTo(points[0])
             for p in points:
                 line_path.lineTo(p)
-        elif shape_type == 'curve' and points:
+        elif shape_type in ['curve', 'freeform'] and points:
             # Paint Bezier curve across given points.
             refined_points = BezierB(points).smooth()
             line_path.moveTo(refined_points[0])
