@@ -112,7 +112,7 @@ batch_iterator = AugmentedSignsBatchIterator(batch_size = 5, p = 1.0, intensity 
 for x_batch, y_batch in batch_iterator(X_train, y_train):
     for i in range(5):
         # plot two images:
-        fig = .figure(figsize=(3, 1))
+        fig = figure(figsize=(3, 1))
         axis = fig.add_subplot(1, 2, 1, xticks=[], yticks=[])
         axis.imshow(X_train[i])
         axis = fig.add_subplot(1, 2, 2, xticks=[], yticks=[])

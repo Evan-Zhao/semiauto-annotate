@@ -7,8 +7,7 @@ import shlex
 import subprocess
 import sys
 
-from setuptools import find_packages
-from setuptools import setup
+from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 version_file = os.path.join(here, 'labelme', '_version.py')
@@ -29,10 +28,11 @@ install_requires = [
     'scipy>=1.2',
     'configobj',
     'keras',
-    'tensorflow>=1.8',
+    'tensorflow>=1.8,<2',
     'sip',
     'pyqt5>=5.12',
-    'opencv-python'
+    'opencv-python',
+    'IPython'
 ]
 
 if sys.argv[1] == 'release':
@@ -89,7 +89,11 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
-    package_data={'labelme': ['icons/*', 'config/*.yaml']},
+    package_data={
+        'labelme': ['icons/*', 'config/*.yaml'],
+        'pose_estm': ['model/*', 'config'],
+        'yolo': ['model_data/*']
+    },
     entry_points={
         'console_scripts': [
             'labelme=labelme.main:main',

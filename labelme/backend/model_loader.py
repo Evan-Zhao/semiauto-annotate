@@ -11,10 +11,10 @@ class ModelLoader(object):
         from labelme.utils import Config
         labels = Config.get('labels').keys()
         yolo = YoloParser(
-            'yolo3/output.json',
+            'yolo/output.json',
             accepted_label=labels
         )
-        pose_estm = PoseEstmParser('pose-estm/output.json')
+        pose_estm = PoseEstmParser('pose_estm/output.json')
         sleep(5)
         on_completion(yolo.data + pose_estm.data)
 

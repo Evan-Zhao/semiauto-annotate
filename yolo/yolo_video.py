@@ -1,8 +1,9 @@
 import argparse
-from yolo import YOLO
-from PIL import Image, ImageDraw
-import numpy as np
 import json
+
+import numpy as np
+from PIL import Image
+from yolo.yolo_class import YOLO
 
 
 def test_time_augmentation(yolo, origin_image, origin_result, magnifiy_range=np.linspace(2, 5, 10),
@@ -58,8 +59,8 @@ def test_time_augmentation(yolo, origin_image, origin_result, magnifiy_range=np.
                             and r_right * (1 - loc_relative_error) <= right <= r_right * (1 + loc_relative_error) \
                             and r_bottom * (1 - loc_relative_error) <= bottom <= r_bottom * (1 + loc_relative_error) \
                             and detect_item["score"] > recorded_detect_item["score"]:
-                                recorded_detect_item["score"] = detect_item["score"]
-                                recorded_detect_item["class"] = className
+                        recorded_detect_item["score"] = detect_item["score"]
+                        recorded_detect_item["class"] = className
             if not found:
                 origin_result.append(detect_item)
 
@@ -98,7 +99,8 @@ def detect_img(yolo, input, output):
 
 FLAGS = None
 
-if __name__ == '__main__':
+
+def main():
     # class YOLO defines the default value, so suppress any default here
     parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
     '''
@@ -148,3 +150,7 @@ if __name__ == '__main__':
     """
     print("Image detection mode")
     detect_img(YOLO(**vars(FLAGS)), FLAGS.input, FLAGS.output)
+
+
+if __name__ == '__main__':
+    main()

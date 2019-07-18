@@ -1,12 +1,15 @@
 import argparse
-import cv2
-import math
 import json
+import math
+import os
+
+import cv2
 import numpy as np
-import util
 from configobj import ConfigObj
 from scipy.ndimage.filters import gaussian_filter
-from model import get_testing_model
+
+from pose_estm import util, _here
+from pose_estm.model import get_testing_model
 
 # find connection in the specified sequence, center 29 is in the position 15
 limbSeq = [[2, 3], [2, 6], [3, 4], [4, 5], [6, 7], [7, 8], [2, 9], [9, 10], \
@@ -27,7 +30,7 @@ colors = [[255, 0, 0], [255, 85, 0], [255, 170, 0], [255, 255, 0], [170, 255, 0]
 
 
 def config_reader():
-    config = ConfigObj('config')
+    config = ConfigObj(os.path.join(_here, 'config'))
 
     param = config['param']
     model_id = param['modelID']
@@ -54,7 +57,7 @@ def config_reader():
     return param, model
 
 
-def process(input_image, output_path, params, model_params):
+def process(model, input_image, output_path, params, model_params):
     oriImg = cv2.imread(input_image)  # B,G,R order
     multiplier = [x * model_params['boxsize'] / oriImg.shape[0] for x in params['scale_search']]
 
@@ -270,12 +273,11 @@ def process(input_image, output_path, params, model_params):
     return canvas
     '''
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+
+def main():
     parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
     parser.add_argument(
-        "--input", nargs='?', type=str, required=False, default='sample_image/timg.jpeg',
-        help="Input image path"
+        "--input", nargs='?', type=str, required=False, help="Input image path"
     )
 
     parser.add_argument(
@@ -294,10 +296,16 @@ if __name__ == '__main__':
     np_branch1 = 38
     np_branch2 = 19
     model = get_testing_model(np_branch1, np_branch2, stages)
+
+    keras_weights_file = os.path.join(_here, keras_weights_file)
     model.load_weights(keras_weights_file)
 
     # load config
     params, model_params = config_reader()
 
     # generate json with body parts
-    process(input_image, output, params, model_params)
+    process(model, input_image, output, params, model_params)
+
+
+if __name__ == '__main__':
+    main()
