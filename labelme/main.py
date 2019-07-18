@@ -7,7 +7,8 @@ import sys
 import yaml
 from labelme import __appname__
 from labelme import __version__
-from labelme.app import MainWindow
+from labelme.mainwindow import MainWindow
+from labelme.app import Application
 from labelme.config import get_config
 from labelme.logger import logger
 from labelme.utils import newIcon
@@ -159,7 +160,7 @@ def main():
         else:
             output_dir = output
 
-    app = QtWidgets.QApplication(sys.argv)
+    app = Application(sys.argv)
     app.setApplicationName(__appname__)
     app.setWindowIcon(newIcon('icon'))
     win = MainWindow(
@@ -168,6 +169,7 @@ def main():
         output_file=output_file,
         output_dir=output_dir,
     )
+    app.set_main_window(win)
 
     if reset_config:
         logger.info('Resetting Qt config: %s' % win.settings.fileName())

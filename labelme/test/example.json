@@ -156,7 +156,18 @@
               {
                 "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "form": null,
+                  "form": [
+                    [
+                      "person",
+                      null,
+                      null
+                    ],
+                    [
+                      null,
+                      null,
+                      null
+                    ]
+                  ],
                   "points": {
                     "py/tuple": [
                       {
@@ -243,7 +254,9 @@
               {
                 "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "form": null,
+                  "form": {
+                    "py/id": 15
+                  },
                   "points": {
                     "py/tuple": [
                       {
@@ -368,7 +381,9 @@
               {
                 "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "form": null,
+                  "form": {
+                    "py/id": 15
+                  },
                   "points": {
                     "py/tuple": [
                       {
@@ -436,7 +451,9 @@
               {
                 "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "form": null,
+                  "form": {
+                    "py/id": 15
+                  },
                   "points": {
                     "py/tuple": [
                       {
@@ -578,7 +595,18 @@
               {
                 "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "form": null,
+                  "form": [
+                    [
+                      "person",
+                      null,
+                      null
+                    ],
+                    [
+                      null,
+                      null,
+                      null
+                    ]
+                  ],
                   "points": {
                     "py/tuple": [
                       {
@@ -646,7 +674,9 @@
               {
                 "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "form": null,
+                  "form": {
+                    "py/id": 46
+                  },
                   "points": {
                     "py/tuple": [
                       {
@@ -771,7 +801,9 @@
               {
                 "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "form": null,
+                  "form": {
+                    "py/id": 46
+                  },
                   "points": {
                     "py/tuple": [
                       {
@@ -801,7 +833,9 @@
               {
                 "py/object": "labelme.shape.shape.Shape",
                 "py/state": {
-                  "form": null,
+                  "form": {
+                    "py/id": 46
+                  },
                   "points": {
                     "py/tuple": [
                       {
@@ -1113,47 +1147,7 @@
         }
       ]
     },
-    "fillColor": {
-      "py/reduce": [
-        {
-          "py/function": "PyQt5.sip._unpickle_type"
-        },
-        {
-          "py/tuple": [
-            "PyQt5.QtGui",
-            "QColor",
-            {
-              "py/tuple": [
-                255,
-                0,
-                0,
-                128
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    "lineColor": {
-      "py/reduce": [
-        {
-          "py/function": "PyQt5.sip._unpickle_type"
-        },
-        {
-          "py/tuple": [
-            "PyQt5.QtGui",
-            "QColor",
-            {
-              "py/tuple": [
-                0,
-                255,
-                0,
-                128
-              ]
-            }
-          ]
-        }
-      ]
-    }
+    "fillColor": null,
+    "lineColor": null
   }
 }

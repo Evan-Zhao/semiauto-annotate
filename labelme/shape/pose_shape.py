@@ -1,8 +1,10 @@
 from typing import Iterable
-
-from qtpy import QtCore, QtGui
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QColor, QFont, QPen, QPainterPath
 
 from .shape import Shape
+
+TEXT_COLOR = QColor(0, 255, 0, 128)
 
 
 class PoseShape(Shape):
@@ -47,6 +49,8 @@ class PoseShape(Shape):
         else:
             self.annotation = {}
         self._shapes = children
+        for s in children:
+            s.form = self.form
         self._point_indexer = PoseShape.PointIndexer(children)
 
     @property
@@ -55,17 +59,17 @@ class PoseShape(Shape):
 
     @staticmethod
     def get_paint_font(scale):
-        return QtGui.QFont('Helvetica', 16 / scale)
+        return QFont('Helvetica', 16 / scale)
 
-    def paint(self, painter, fill=False, canvas=None, **kwargs):
+    def paint(self, painter, fill=False, canvas=None):
         scale = self.get_scale(canvas)
         for s in self._shapes:
-            s.paint(painter, fill, self.label_color, canvas)
-        dotted_pen = QtGui.QPen(self.label_color)
+            s.paint(painter, fill, canvas)
+        dotted_pen = QPen(self.label_color)
         dotted_pen.setWidth(max(1, int(round(2.0 / scale))))
-        dotted_pen.setStyle(QtCore.Qt.DashLine)
+        dotted_pen.setStyle(Qt.DashLine)
         painter.setPen(dotted_pen)
-        dotted_line_path = QtGui.QPainterPath()
+        dotted_line_path = QPainterPath()
         for s1, s2 in zip(self._shapes, self._shapes[1:]):
             dotted_line_path.moveTo(s1[0])
             dotted_line_path.lineTo(s2[0])
@@ -73,10 +77,10 @@ class PoseShape(Shape):
             dotted_line_path.lineTo(s2[-1])
         painter.drawPath(dotted_line_path)
         if self.annotation:
-            text_pen = QtGui.QPen(PoseShape.def_color)
+            text_pen = QPen(TEXT_COLOR)
             text_pen.setWidth(max(1, int(round(1.0 / scale))))
             painter.setPen(text_pen)
-            text_path = QtGui.QPainterPath()
+            text_path = QPainterPath()
             font = self.get_paint_font(scale)
             painter.setFont(font)
             for k, v in self.annotation.items():

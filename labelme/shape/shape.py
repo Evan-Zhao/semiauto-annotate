@@ -1,30 +1,27 @@
 import copy
 import math
 
-from qtpy import QtCore
-from qtpy import QtGui
+from qtpy.QtCore import QRectF
+from qtpy.QtGui import QPainterPath, QPen, QColor
 
 import labelme.utils
 from labelme.utils import Config
+from labelme.app import Application
 from .bezier import BezierB
 
 # TODO(unknown):
 # - [opt] Store paths instead of creating new ones at each paint.
 
-
-DEFAULT_LINE_COLOR = QtGui.QColor(0, 255, 0, 128)
-DEFAULT_FILL_COLOR = QtGui.QColor(255, 0, 0, 128)
-DEFAULT_SELECT_LINE_COLOR = QtGui.QColor(255, 255, 255)
-DEFAULT_SELECT_FILL_COLOR = QtGui.QColor(0, 128, 255, 155)
-DEFAULT_VERTEX_FILL_COLOR = QtGui.QColor(0, 255, 0, 255)
-DEFAULT_HVERTEX_FILL_COLOR = QtGui.QColor(255, 0, 0)
+DEFAULT_LINE_COLOR = QColor(0, 255, 0, 128)
+DEFAULT_FILL_COLOR = QColor(255, 0, 0, 128)
+DEFAULT_VERTEX_FILL_COLOR = QColor(0, 255, 0, 255)
+DEFAULT_HVERTEX_FILL_COLOR = QColor(255, 0, 0)
 
 
 class Shape(object):
     P_SQUARE, P_ROUND = 0, 1
     MOVE_VERTEX, NEAR_VERTEX = 0, 1
     # The following class variables influence the drawing of all shape objects.
-    def_color = DEFAULT_LINE_COLOR
     vertex_fill_color = DEFAULT_VERTEX_FILL_COLOR
     hvertex_fill_color = DEFAULT_HVERTEX_FILL_COLOR
     def_point_type = P_ROUND
@@ -56,7 +53,7 @@ class Shape(object):
         def argb_to_q_color(val):
             hexStr = hex(val)[2:]
             a, r, g, b = tuple(int(hexStr[i:i + 2], 16) for i in (0, 2, 4, 6))
-            return QtGui.QColor(r, g, b, a)
+            return QColor(r, g, b, a)
 
         label_color = Config.get('label_color', default={})
         if self.label in label_color:
@@ -72,7 +69,7 @@ class Shape(object):
     def getRectFromLine(pt1, pt2):
         x1, y1 = pt1.x(), pt1.y()
         x2, y2 = pt2.x(), pt2.y()
-        return QtCore.QRectF(x1, y1, x2 - x1, y2 - y1)
+        return QRectF(x1, y1, x2 - x1, y2 - y1)
 
     @staticmethod
     def getCircleRectFromLine(line):
@@ -82,12 +79,12 @@ class Shape(object):
         (c, point) = line
         r = line[0] - line[1]
         d = math.sqrt(math.pow(r.x(), 2) + math.pow(r.y(), 2))
-        rectangle = QtCore.QRectF(c.x() - d, c.y() - d, 2 * d, 2 * d)
+        rectangle = QRectF(c.x() - d, c.y() - d, 2 * d, 2 * d)
         return rectangle
 
     @staticmethod
     def paint_vertices(painter, points, scale, highlight=None, highlight_mode=None):
-        path = QtGui.QPainterPath()
+        path = QPainterPath()
         if highlight is not None:
             vertex_fill_color = Shape.hvertex_fill_color
         else:
@@ -109,7 +106,7 @@ class Shape(object):
 
     @staticmethod
     def get_line_path(points, shape_type):
-        line_path = QtGui.QPainterPath()
+        line_path = QPainterPath()
         if shape_type == 'rectangle' and len(points) == 2:
             rectangle = Shape.getRectFromLine(*points)
             line_path.addRect(rectangle)
@@ -137,10 +134,11 @@ class Shape(object):
     def set_label(self, form):
         self.form = form
 
-    def paint(self, painter, fill=False, with_color=None, canvas=None):
+    def paint(self, painter, fill=False, canvas=None):
         scale = self.get_scale(canvas)
-        color = with_color or self.label_color or Shape.def_color
-        pen = QtGui.QPen(color)
+        mainwindow = Application.get_main_window()
+        color = self.label_color or mainwindow.lineColor or DEFAULT_LINE_COLOR
+        pen = QPen(color)
         # Try using integer sizes for smoother drawing(?)
         pen.setWidth(max(1, int(round(self.line_width / scale))))
         painter.setPen(pen)

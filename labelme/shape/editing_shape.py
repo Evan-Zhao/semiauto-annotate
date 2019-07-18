@@ -1,16 +1,16 @@
-from qtpy import QtGui
+from qtpy.QtGui import QColor, QPen, QPainterPath
+from qtpy.QtCore import Qt
 
 from .bezier import BezierB
-from .shape import Shape
+from .shape import Shape, DEFAULT_LINE_COLOR, DEFAULT_FILL_COLOR
 
-DEFAULT_LAST_LINE_COLOR = QtGui.QColor(0, 0, 255)
-DEFAULT_LINE_COLOR = QtGui.QColor(0, 255, 0, 128)
+DEFAULT_LAST_LINE_COLOR = QColor(0, 0, 255)
+FREEFORM_LINE_COLOR = QColor(Qt.darkGray)
+FREEFORM_FILL_COLOR = QColor(Qt.lightGray)
 
 
 class EditingShape(Shape):
     # The following class variables influence the drawing of all shape objects.
-    def_color = DEFAULT_LINE_COLOR
-    def_last_color = DEFAULT_LAST_LINE_COLOR
     must_close = ['polygon', 'rectangle', 'point', 'line', 'circle']
     manual_close = ['polygon', 'curve', 'freeform']
 
@@ -18,7 +18,6 @@ class EditingShape(Shape):
         points = [init_point] if init_point else []
         super().__init__(points=points, form=None, shape_type=shape_type)
 
-    # TODO
     @classmethod
     def undo_into_editing_point(cls, shape):
         ret = cls(shape.shape_type)
@@ -26,7 +25,6 @@ class EditingShape(Shape):
             ret.points = shape.points
         elif shape.points:
             ret.points = shape.points[:-1]
-            # add ret.points[-1]
         else:
             return None
         return ret
@@ -58,6 +56,24 @@ class EditingShape(Shape):
         else:
             return True
 
+    def _get_pens_and_colors(self, canvas, line_color=None, fill_color=None):
+        scale = self.get_scale(canvas)
+        if self.shape_type != 'freeform':
+            line_color = line_color or DEFAULT_LINE_COLOR
+            fill_color = fill_color or DEFAULT_FILL_COLOR
+            last_line_color = DEFAULT_LAST_LINE_COLOR
+        else:
+            line_color = line_color or FREEFORM_LINE_COLOR
+            fill_color = fill_color or FREEFORM_FILL_COLOR
+            last_line_color = FREEFORM_LINE_COLOR
+        line_pen = QPen(line_color)
+        last_line_pen = QPen(last_line_color)
+        # Try using integer sizes for smoother drawing(?)
+        width = max(1, int(round(self.line_width / scale)))
+        for pen in (line_pen, last_line_pen):
+            pen.setWidth(width)
+        return line_pen, last_line_pen, fill_color
+
     def add_point(self):
         assert self.points
         self.points.append(self.points[-1])
@@ -76,26 +92,26 @@ class EditingShape(Shape):
     def insert_point(self, i, point):
         self.points.insert(i, point)
 
-    def paint(self, painter, fill=False, canvas=None, **kwargs):
+    def paint(self, painter, fill=False, canvas=None):
+        from labelme.app import Application
+
+        mainwindow = Application.get_main_window()
+        line_pen, last_line_pen, fill_color = self._get_pens_and_colors(
+            canvas, mainwindow.lineColor, mainwindow.fillColor
+        )
         scale = self.get_scale(canvas)
-        pen1 = QtGui.QPen(EditingShape.def_color)
-        pen2 = QtGui.QPen(EditingShape.def_last_color)
-        # Try using integer sizes for smoother drawing(?)
-        width = max(1, int(round(self.line_width / scale)))
-        pen1.setWidth(width)
-        pen2.setWidth(width)
-        painter.setPen(pen1)
         # Draw all vertices
         self.paint_vertices(
             painter, self.points, scale,
             self._highlightIndex, self._highlightMode
         )
+        line_path1, line_path2 = QPainterPath(), QPainterPath()
+        fill_path = line_path1
         # Get path for committed and uncommitted parts
         # respectively and draw with different colors
         if self.shape_type == 'curve' and self.points:
             # Bezier curve needs to be fitted as a whole,
             # so reimplementing this part here.
-            line_path1, line_path2 = QtGui.QPainterPath(), QtGui.QPainterPath()
             refined_points = BezierB(self.points).smooth()
             sep_idx = refined_points.index(self.points[-1])
             line_path1.moveTo(refined_points[0])
@@ -104,26 +120,24 @@ class EditingShape(Shape):
             line_path2.moveTo(refined_points[sep_idx])
             for p in refined_points[sep_idx:]:
                 line_path2.lineTo(p)
-            painter.drawPath(line_path1)
-            painter.setPen(pen2)
-            painter.drawPath(line_path2)
-            if fill:
-                painter.fillPath(line_path1, EditingShape.def_color)
         elif self.shape_type in ['circle', 'rectangle']:
+            painter.setPen(line_pen)
             line_path2 = self.get_line_path(self.points, self.shape_type)
-            painter.setPen(pen2)
+            painter.setPen(last_line_pen)
             painter.drawPath(line_path2)
+            fill_path = line_path2
         elif len(self.points) >= 2:
             # Otherwise, just get 2 different line paths,
             # painting with different colors.
             # Use type == 'line' even with polygon to prevent connecting back.
             line_path1 = self.get_line_path(self.points[:-1], 'line')
             line_path2 = self.get_line_path(self.points[-2:], 'line')
-            painter.drawPath(line_path1)
-            painter.setPen(pen2)
-            painter.drawPath(line_path2)
-            if fill:
-                painter.fillPath(line_path1, EditingShape.def_color)
+        painter.setPen(line_pen)
+        painter.drawPath(line_path1)
+        painter.setPen(last_line_pen)
+        painter.drawPath(line_path2)
+        if fill:
+            painter.fillPath(fill_path, fill_color)
 
     def __getstate__(self):
         return dict(
