@@ -8,6 +8,7 @@ import labelme.utils
 from labelme.custom_widgets import JoinShapesDialog, LoadingDialog
 from labelme.shape import Shape, PoseShape, EditingShape
 from labelme.utils import Config
+from labelme.backend import ModelLoader
 
 # TODO(unknown):
 # - [maybe] Find optimal epsilon value.
@@ -51,6 +52,10 @@ class Canvas(QtWidgets.QWidget):
         self._movingShape = False
         self._painter = QPainter()
         self._cursor = CURSOR_DEFAULT
+        # Loading dialog
+        self.loading_dialog = LoadingDialog(self)
+        # DL models
+        self.model_loader = None
         # Public state
         self.shapes = []
         self.shapesBackups = []
@@ -61,8 +66,6 @@ class Canvas(QtWidgets.QWidget):
         # 0: right-click without selection and dragging of shapes
         # 1: right-click with selection and dragging of shapes
         self.menus = (QtWidgets.QMenu(), QtWidgets.QMenu())
-        # Loading dialog
-        self.loading_dialog = LoadingDialog(self)
         # Set widget options.
         self.setMouseTracking(True)
         self.setFocusPolicy(Qt.WheelFocus)
@@ -77,6 +80,14 @@ class Canvas(QtWidgets.QWidget):
 
     def fillDrawing(self):
         return self._fill_drawing
+
+    def load_models(self):
+        def on_model_inited(succeeded, model):
+            self.loading_dialog.loaded.emit(succeeded)
+            self.model_loader = model
+
+        ModelLoader.main_thread_ctor(on_model_inited)
+        self.loading_dialog.exec_()
 
     def setFillDrawing(self, value):
         self._fill_drawing = value
@@ -688,19 +699,20 @@ class Canvas(QtWidgets.QWidget):
             self.drawingPolygon.emit(False)
         self.repaint()
 
-    def on_model_result_received(self, model_data):
-        self.loading_dialog.model_hint_loaded.emit()
-        self.shapes.extend(model_data)
-
     def load_image_file(self, image_file, load_model_hint=True):
+        def on_model_result_received(succeeded, model_data):
+            self.loading_dialog.loaded.emit(succeeded)
+            if succeeded:
+                self.shapes.extend(model_data)
+
         self._image_file = image_file
         if not Config.get('keep_prev'):
             self.shapes = []
         if load_model_hint:
-            from labelme.backend import ModelLoader
-            from labelme.custom_widgets import LoadingDialog
-            ModelLoader.threaded_load(
-                image_file, on_completion=self.on_model_result_received
+            if not self.model_loader:
+                self.load_models()
+            self.model_loader.main_thread_infer(
+                image_file.filename, on_completion=on_model_result_received
             )
             self.loading_dialog.exec_()
         self.repaint()

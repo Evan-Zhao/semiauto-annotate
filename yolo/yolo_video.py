@@ -6,66 +6,6 @@ from PIL import Image
 from yolo.yolo_class import YOLO
 
 
-def test_time_augmentation(yolo, origin_image, origin_result, magnifiy_range=np.linspace(2, 5, 10),
-                           loc_relative_error=0.2):
-    '''
-        Flip && Magnify i times
-    '''
-    for i in np.append([0], magnifiy_range):
-        if i == 0:
-            image_flip = origin_image.transpose(Image.FLIP_LEFT_RIGHT)
-            result = yolo.detect_image(image_flip)
-        else:
-            image_magnified = origin_image.resize((int(origin_image.width * i), int(origin_image.height * i)))
-            result = yolo.detect_image(image_magnified)
-
-        for detect_item in result:
-            top, right, bottom, left = detect_item["location"].values()
-            if i == 0:
-                temp = left
-                left = image_flip.width - right
-                right = image_flip.width - temp
-            else:
-                top = int((float(top) + 0.5) / float(i))
-                left = int((float(left) + 0.5) / float(i))
-                right = int((float(right) + 0.5) / float(i))
-                bottom = int((float(bottom) + 0.5) / float(i))
-
-            detect_item["location"]["top"] = top
-            detect_item["location"]["left"] = left
-            detect_item["location"]["right"] = right
-            detect_item["location"]["bottom"] = bottom
-            className = detect_item["class"]
-
-            '''
-                Determine whether the detected item has been recorded
-            '''
-            found = False
-            for recorded_detect_item in origin_result:
-                r_top, r_left, r_right, r_bottom = recorded_detect_item["location"].values()
-                r_className = recorded_detect_item["class"]
-                if className == r_className:
-                    # Same Object
-                    if r_top * (1 - loc_relative_error) <= top <= r_top * (1 + loc_relative_error) \
-                            or r_left * (1 - loc_relative_error) <= left <= r_left * (1 + loc_relative_error) \
-                            or r_right * (1 - loc_relative_error) <= right <= r_right * (1 + loc_relative_error) \
-                            or r_bottom * (1 - loc_relative_error) <= bottom <= r_bottom * (1 + loc_relative_error):
-                        found = True
-                        break
-                else:
-                    # Same Object, but has different classification
-                    if r_top * (1 - loc_relative_error) <= top <= r_top * (1 + loc_relative_error) \
-                            and r_left * (1 - loc_relative_error) <= left <= r_left * (1 + loc_relative_error) \
-                            and r_right * (1 - loc_relative_error) <= right <= r_right * (1 + loc_relative_error) \
-                            and r_bottom * (1 - loc_relative_error) <= bottom <= r_bottom * (1 + loc_relative_error) \
-                            and detect_item["score"] > recorded_detect_item["score"]:
-                        recorded_detect_item["score"] = detect_item["score"]
-                        recorded_detect_item["class"] = className
-            if not found:
-                origin_result.append(detect_item)
-
-    return origin_result
-
 
 def detect_img(yolo, input, output):
     image = Image.open(input)

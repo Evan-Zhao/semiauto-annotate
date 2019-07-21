@@ -28,7 +28,7 @@ class UILoadingDialog(object):
 
 
 class LoadingDialog(QDialog):
-    model_hint_loaded = Signal()
+    loaded = Signal(bool)
 
     def __init__(self, parent):
         super(LoadingDialog, self).__init__(
@@ -36,7 +36,14 @@ class LoadingDialog(QDialog):
         )
         self.ui = UILoadingDialog()
         self.ui.setup_ui(self)
-        self.model_hint_loaded.connect(self.accept)
+        self.loaded.connect(self.accept)
+
+    def on_loaded(self, succeeded):
+        if succeeded:
+            self.accept()
+        else:
+            print('呀 嘿 嘿 啊啊啊啊啊啊啊')
+            self.accept()
 
     def exec_(self):
         self.ui.waiting.start()

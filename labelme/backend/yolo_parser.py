@@ -4,18 +4,18 @@ from labelme.shape import Shape
 
 
 class YoloParser(object):
-    def __init__(self, filename, accepted_label=None):
+    def __init__(self, json_data, accepted_label=None):
         self.data = None
         self.accepted_label = accepted_label
-        if filename is not None:
-            self.load(filename)
-        self.filename = filename
+        if json_data is not None:
+            self.load(json_data)
 
-    def load(self, filename):
+    def load(self, json_data):
         import json
         from collections import namedtuple
-        with open(filename, 'r') as f:
-            loaded = json.load(f, object_hook=lambda d: namedtuple('X', d.keys(), rename=True)(*d.values()))
+        loaded = json.loads(
+            json_data, object_hook=lambda d: namedtuple('X', d.keys(), rename=True)(*d.values())
+        )
         self.data = [self.yolo_dict_to_shape(yolo_dict) for yolo_dict in loaded]
         self.data = [x for x in self.data if x is not None]
 

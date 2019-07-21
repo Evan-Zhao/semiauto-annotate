@@ -57,7 +57,7 @@ def config_reader():
     return param, model
 
 
-def process(model, input_image, output_path, params, model_params):
+def process(model, input_image, params, model_params):
     oriImg = cv2.imread(input_image)  # B,G,R order
     multiplier = [x * model_params['boxsize'] / oriImg.shape[0] for x in params['scale_search']]
 
@@ -241,71 +241,48 @@ def process(model, input_image, output_path, params, model_params):
                 person_keypoints[i].append(-1)
             else:
                 person_keypoints[i].append([int(candidate[index][0]), int(candidate[index][1])])
-    fo = open(output_path, "w")
-    fo.write(json.dumps(person_keypoints))
-    fo.close()
+    return json.dumps(person_keypoints)
 
-    ''' Uncomment to visualize
-    canvas = cv2.imread(input_image)  # B,G,R order
-    for i in range(18):
-        for j in range(len(all_peaks[i])):
-            cv2.circle(canvas, all_peaks[i][j][0:2], 4, colors[i], thickness=-1)
-
-    stickwidth = 4
-
-    for i in range(17):
-        for n in range(len(subset)):
-            index = subset[n][np.array(limbSeq[i]) - 1]
-            if -1 in index:
-                continue
-            cur_canvas = canvas.copy()
-            Y = candidate[index.astype(int), 0]
-            X = candidate[index.astype(int), 1]
-            mX = np.mean(X)
-            mY = np.mean(Y)
-            length = ((X[0] - X[1]) ** 2 + (Y[0] - Y[1]) ** 2) ** 0.5
-            angle = math.degrees(math.atan2(X[0] - X[1], Y[0] - Y[1]))
-            polygon = cv2.ellipse2Poly((int(mY), int(mX)), (int(length / 2), stickwidth), int(angle), 0,
-                                       360, 1)
-            cv2.fillConvexPoly(cur_canvas, polygon, colors[i])
-            canvas = cv2.addWeighted(canvas, 0.4, cur_canvas, 0.6, 0)
-
-    return canvas
-    '''
+    # # Uncomment to visualize
+    # canvas = cv2.imread(input_image)  # B,G,R order
+    # for i in range(18):
+    #     for j in range(len(all_peaks[i])):
+    #         cv2.circle(canvas, all_peaks[i][j][0:2], 4, colors[i], thickness=-1)
+    #
+    # stickwidth = 4
+    #
+    # for i in range(17):
+    #     for n in range(len(subset)):
+    #         index = subset[n][np.array(limbSeq[i]) - 1]
+    #         if -1 in index:
+    #             continue
+    #         cur_canvas = canvas.copy()
+    #         Y = candidate[index.astype(int), 0]
+    #         X = candidate[index.astype(int), 1]
+    #         mX = np.mean(X)
+    #         mY = np.mean(Y)
+    #         length = ((X[0] - X[1]) ** 2 + (Y[0] - Y[1]) ** 2) ** 0.5
+    #         angle = math.degrees(math.atan2(X[0] - X[1], Y[0] - Y[1]))
+    #         polygon = cv2.ellipse2Poly((int(mY), int(mX)), (int(length / 2), stickwidth), int(angle), 0,
+    #                                    360, 1)
+    #         cv2.fillConvexPoly(cur_canvas, polygon, colors[i])
+    #         canvas = cv2.addWeighted(canvas, 0.4, cur_canvas, 0.6, 0)
+    #
+    # return canvas
 
 
-def main():
-    parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
-    parser.add_argument(
-        "--input", nargs='?', type=str, required=False, help="Input image path"
-    )
+class PoseDetection(object):
+    def __init__(self):
+        stages = 6
+        np_branch1 = 38
+        np_branch2 = 19
+        self.model = get_testing_model(np_branch1, np_branch2, stages)
 
-    parser.add_argument(
-        "--output", nargs='?', type=str, default="output.json",
-        help="Output json file"
-    )
-    parser.add_argument('--model', type=str, default='model/pose_iter_440000.h5', help='path to the weights file')
+        keras_weights_file = os.path.join(_here, 'model/pose_iter_440000.h5')
+        self.model.load_weights(keras_weights_file)
 
-    args = parser.parse_args()
-    input_image = args.input
-    output = args.output
-    keras_weights_file = args.model
+        # load config
+        self.params, self.model_params = config_reader()
 
-    # load model
-    stages = 6
-    np_branch1 = 38
-    np_branch2 = 19
-    model = get_testing_model(np_branch1, np_branch2, stages)
-
-    keras_weights_file = os.path.join(_here, keras_weights_file)
-    model.load_weights(keras_weights_file)
-
-    # load config
-    params, model_params = config_reader()
-
-    # generate json with body parts
-    process(model, input_image, output, params, model_params)
-
-
-if __name__ == '__main__':
-    main()
+    def infer_on_image(self, image_path):
+        return process(self.model, image_path, self.params, self.model_params)

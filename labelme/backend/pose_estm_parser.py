@@ -14,16 +14,14 @@ class PoseEstmParser(object):
     shape_form = [['person', None, None, None]]
     shape_type = 'linestrip'
 
-    def __init__(self, filename):
+    def __init__(self, json_data):
         self.data = None
-        if filename is not None:
-            self.load(filename)
-        self.filename = filename
+        if json_data is not None:
+            self.load(json_data)
 
-    def load(self, filename):
+    def load(self, json_data):
         import json
-        with open(filename, 'r') as f:
-            loaded = json.load(f)
+        loaded = json.loads(json_data)
         parsed = self.validate_and_parse(loaded)
         self.data = [self.points_to_shape(points) for points in parsed]
 

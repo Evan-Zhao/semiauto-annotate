@@ -906,8 +906,6 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = dlg.getSaveFileName(
             self, 'Choose File', default_labelfile_name,
             'Label files (*%s)' % LabelFile.suffix)
-        if QT5:
-            filename, _ = filename
         filename = str(filename)
         return filename
 
