@@ -1,5 +1,6 @@
 from threading import Thread
 from queue import Queue
+from time import time
 
 from labelme.utils import Config
 from pose_estm.pose_detection import PoseDetection
@@ -10,10 +11,12 @@ from .yolo_parser import YoloParser
 
 class ModelLoader(object):
     def __init__(self, on_inited):
+        t0 = time()
         self.pose_detection = PoseDetection()
-        print('Pose det loaded')
+        t1 = time()
+        print(f'Pose detection loaded in {t1 - t0} secs')
         self.yolo = YOLO()
-        print('Yolo loaded')
+        print(f'Yolo loaded in {time() - t1} secs')
         self.task_queue = Queue()
         on_inited(True, self)
         while True:
@@ -22,6 +25,7 @@ class ModelLoader(object):
 
     def _infer(self, image_file, on_completion):
         results = []
+        t0 = time()
         try:
             labels = Config.get('labels').keys()
             yolo_json = self.yolo.infer_on_image(image_file)
@@ -29,12 +33,15 @@ class ModelLoader(object):
             results.extend(yolo.data)
         except Exception as e:
             print(e)
+        t1 = time()
+        print(f'Yolo inference in {t1 - t0} secs')
         try:
             pose_estm_json = self.pose_detection.infer_on_image(image_file)
             pose_estm = PoseEstmParser(pose_estm_json)
             results.extend(pose_estm.data)
         except Exception as e:
             print(e)
+        print(f'Pose detection inference in {time() - t1} secs')
         on_completion(True, results)
 
     @classmethod

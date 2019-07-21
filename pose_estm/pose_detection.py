@@ -273,6 +273,10 @@ def process(model, input_image, params, model_params):
 
 class PoseDetection(object):
     def __init__(self):
+        import tensorflow.compat.v1.logging as logging
+        import os
+        logging.set_verbosity(logging.ERROR)
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
         stages = 6
         np_branch1 = 38
         np_branch2 = 19
