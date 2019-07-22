@@ -16,10 +16,10 @@ label_flags:
 
 labels:
   __flags: [occluded, truncated]
-  bike: null
+  bicycle: null
   bus: null
   car: null
-  motor: null
+  motorbike: null
   train: null
   truck: null
   rider: null

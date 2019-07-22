@@ -59,8 +59,8 @@ class Canvas(PreviewCanvas):
 
     def load_models(self):
         def on_model_inited(succeeded, model):
-            self.loading_dialog.loaded.emit(succeeded)
             self.model_loader = model
+            self.loading_dialog.loaded.emit(succeeded)
 
         ModelLoader.main_thread_ctor(on_model_inited)
         self.loading_dialog.exec_()
