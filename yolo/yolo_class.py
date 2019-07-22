@@ -7,28 +7,24 @@ import colorsys
 from timeit import default_timer as timer
 
 import numpy as np
-from keras import backend as K
-from keras.models import load_model
-from keras.layers import Input
+import tensorflow as tf
 from PIL import Image, ImageFont, ImageDraw
 
 
-from yolo.yolo3.model import yolo_eval, yolo_body, tiny_yolo_body
-from yolo.yolo3.utils import letterbox_image
+from yolo.yolo3.utils import load_graph, get_boxes_and_inputs_pb, letter_box_image, non_max_suppression
 import os
-from keras.utils import multi_gpu_model
-
 here = os.path.abspath(os.path.dirname(__file__))
 
 
 class YOLO(object):
     _defaults = {
-        "model_path": os.path.join(here, 'model_data/yolo.h5'),
+        "model_path": os.path.join(here, 'model_data/yolo.pb'),
         "anchors_path": os.path.join(here, 'model_data/yolo_anchors.txt'),
         "classes_path": os.path.join(here, 'model_data/coco_classes.txt'),
         "score": 0.3,
+        "conf_threshold":0.5,
         "iou": 0.45,
-        "model_image_size": (416, 416),
+        "model_image_size": 416,
         "gpu_num": 1,
     }
 
@@ -40,17 +36,14 @@ class YOLO(object):
             return "Unrecognized attribute name '" + n + "'"
 
     def __init__(self, **kwargs):
-        import tensorflow.compat.v1.logging as logging
         import os
-        logging.set_verbosity(logging.ERROR)
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
         self.__dict__.update(self._defaults)  # set up default values
         self.__dict__.update(kwargs)  # and update with user overrides
         self.image = True
         self.class_names = self._get_class()
-        self.anchors = self._get_anchors()
-        self.sess = K.get_session()
-        self.boxes, self.scores, self.classes = self.generate()
+        self.frozenGraph = load_graph(self.model_path)
+        self.boxes, self.inputs = get_boxes_and_inputs_pb(self.frozenGraph)
 
     def _get_class(self):
         classes_path = os.path.expanduser(self.classes_path)
@@ -59,91 +52,34 @@ class YOLO(object):
         class_names = [c.strip() for c in class_names]
         return class_names
 
-    def _get_anchors(self):
-        anchors_path = os.path.expanduser(self.anchors_path)
-        with open(anchors_path) as f:
-            anchors = f.readline()
-        anchors = [float(x) for x in anchors.split(',')]
-        return np.array(anchors).reshape(-1, 2)
-
-    def generate(self):
-        model_path = os.path.expanduser(self.model_path)
-        assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
-
-        # Load model, or construct model and load weights.
-        num_anchors = len(self.anchors)
-        num_classes = len(self.class_names)
-        is_tiny_version = num_anchors == 6  # default setting
-        try:
-            self.yolo_model = load_model(model_path, compile=False)
-        except:
-            self.yolo_model = tiny_yolo_body(Input(shape=(None, None, 3)), num_anchors // 2, num_classes) \
-                if is_tiny_version else yolo_body(Input(shape=(None, None, 3)), num_anchors // 3, num_classes)
-            self.yolo_model.load_weights(self.model_path)  # make sure model, anchors and classes match
-        else:
-            assert self.yolo_model.layers[-1].output_shape[-1] == \
-                   num_anchors / len(self.yolo_model.output) * (num_classes + 5), \
-                'Mismatch between model and given anchor and class sizes'
-
-        print('{} model, anchors, and classes loaded.'.format(model_path))
-
-        # Generate colors for drawing bounding boxes.
-        hsv_tuples = [(x / len(self.class_names), 1., 1.)
-                      for x in range(len(self.class_names))]
-        self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-        self.colors = list(
-            map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)),
-                self.colors))
-        np.random.seed(10101)  # Fixed seed for consistent colors across runs.
-        np.random.shuffle(self.colors)  # Shuffle colors to decorrelate adjacent classes.
-        np.random.seed(None)  # Reset seed to default.
-
-        # Generate output tensor targets for filtered bounding boxes.
-        self.input_image_shape = K.placeholder(shape=(2,))
-        if self.gpu_num >= 2:
-            self.yolo_model = multi_gpu_model(self.yolo_model, gpus=self.gpu_num)
-        boxes, scores, classes = yolo_eval(self.yolo_model.output, self.anchors,
-                                           len(self.class_names), self.input_image_shape,
-                                           score_threshold=self.score, iou_threshold=self.iou)
-        return boxes, scores, classes
 
     def detect_image(self, image):
-        start = timer()
-
-        if self.model_image_size != (None, None):
-            assert self.model_image_size[0] % 32 == 0, 'Multiples of 32 required'
-            assert self.model_image_size[1] % 32 == 0, 'Multiples of 32 required'
-            boxed_image = letterbox_image(image, tuple(reversed(self.model_image_size)))
-        else:
-            new_image_size = (image.width - (image.width % 32),
-                              image.height - (image.height % 32))
-            boxed_image = letterbox_image(image, new_image_size)
-        image_data = np.array(boxed_image, dtype='float32')
-
-        image_data /= 255.
-        image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
-
-        out_boxes, out_scores, out_classes = self.sess.run(
-            [self.boxes, self.scores, self.classes],
-            feed_dict={
-                self.yolo_model.input: image_data,
-                self.input_image_shape: [image.size[1], image.size[0]],
-                K.learning_phase(): 0
-            })
-
+        img_resized = letter_box_image(image, self.model_image_size, self.model_image_size, 128)
+        img_resized = img_resized.astype(np.float32)
+        with tf.Session(graph=self.frozenGraph) as sess:
+            detected_boxes = sess.run(
+                self.boxes, feed_dict={self.inputs: [img_resized]})
+        filtered_boxes = non_max_suppression(detected_boxes,
+                                             confidence_threshold=self.conf_threshold,
+                                             iou_threshold=self.iou)
         # print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
         result = []
-        for i in range(out_classes.shape[0]):
-            top, left, bottom, right = out_boxes[i]
-            top = max(0, int(np.floor(top + 0.5)))
-            left = max(0, int(np.floor(left + 0.5).astype('int')))
-            bottom = min(image.size[1], int(np.floor(bottom + 0.5).astype('int')))
-            right = min(image.size[0], int(np.floor(right + 0.5).astype('int')))
-            box_location = {"top": top, "left": left, "right": right, "bottom": bottom}
-            class_name = self.class_names[out_classes[i]]
-            score = float(out_scores[i])
-            box = {"location": box_location, "class": class_name, "score": score}
-            result.append(box)
+        for cls in filtered_boxes.items():
+            class_name = self.class_names[cls[0]]
+            for box in cls[1]:
+                left, top, right, bottom = box[0]
+                right *= (image.size[0] / float(self.model_image_size))
+                left *= (image.size[0]/float(self.model_image_size))
+                top *= (image.size[1]/float(self.model_image_size))
+                bottom *= (image.size[1] / float(self.model_image_size))
+                top = max(0, int(np.floor(top + 0.5)))
+                left = max(0, int(np.floor(left + 0.5).astype('int')))
+                bottom = min(image.size[1], int(np.floor(bottom + 0.5).astype('int')))
+                right = min(image.size[0], int(np.floor(right + 0.5).astype('int')))
+                box_location = {"top": top, "left": left, "right": right, "bottom": bottom}
+                score = float(box[1])
+                box = {"location": box_location, "class": class_name, "score": score}
+                result.append(box)
 
         '''
         font = ImageFont.truetype(font='font/FiraMono-Medium.otf',
@@ -186,6 +122,7 @@ class YOLO(object):
         print(end - start)
         image.show()
         '''
+        sess.close()
         return result
 
     def infer_on_image(self, image_path):
@@ -193,13 +130,12 @@ class YOLO(object):
 
         image = Image.open(image_path)
         result = self.detect_image(image)
-        result = test_time_augmentation(self, image, result)
+        #result = test_time_augmentation(self, image, result)
 
         # self.close_session()
         return json.dumps(result)
 
-    def close_session(self):
-        self.sess.close()
+
 
 
 def detect_video(yolo, video_path, output_path=""):

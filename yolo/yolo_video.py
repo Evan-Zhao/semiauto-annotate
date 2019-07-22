@@ -10,7 +10,7 @@ from yolo.yolo_class import YOLO
 def detect_img(yolo, input, output):
     image = Image.open(input)
     result = yolo.detect_image(image)
-    result = test_time_augmentation(yolo, image, result)
+    #result = test_time_augmentation(yolo, image, result)
 
     fo = open(output, "w")
     fo.write(json.dumps(result))

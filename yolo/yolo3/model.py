@@ -1,412 +1,262 @@
-"""YOLO_v3 Model Defined in Keras."""
-
-from functools import wraps
+# -*- coding: utf-8 -*-
 
 import numpy as np
 import tensorflow as tf
-from keras import backend as K
-from keras.layers import Conv2D, Add, ZeroPadding2D, UpSampling2D, Concatenate, MaxPooling2D
-from keras.layers.advanced_activations import LeakyReLU
-from keras.layers.normalization import BatchNormalization
-from keras.models import Model
-from keras.regularizers import l2
 
-from .utils import compose
+slim = tf.contrib.slim
 
+_BATCH_NORM_DECAY = 0.9
+_BATCH_NORM_EPSILON = 1e-05
+_LEAKY_RELU = 0.1
 
-@wraps(Conv2D)
-def DarknetConv2D(*args, **kwargs):
-    """Wrapper to set Darknet parameters for Convolution2D."""
-    darknet_conv_kwargs = {'kernel_regularizer': l2(5e-4)}
-    darknet_conv_kwargs['padding'] = 'valid' if kwargs.get('strides')==(2,2) else 'same'
-    darknet_conv_kwargs.update(kwargs)
-    return Conv2D(*args, **darknet_conv_kwargs)
-
-def DarknetConv2D_BN_Leaky(*args, **kwargs):
-    """Darknet Convolution2D followed by BatchNormalization and LeakyReLU."""
-    no_bias_kwargs = {'use_bias': False}
-    no_bias_kwargs.update(kwargs)
-    return compose(
-        DarknetConv2D(*args, **no_bias_kwargs),
-        BatchNormalization(),
-        LeakyReLU(alpha=0.1))
-
-def resblock_body(x, num_filters, num_blocks):
-    '''A series of resblocks starting with a downsampling Convolution2D'''
-    # Darknet uses left and top padding instead of 'same' mode
-    x = ZeroPadding2D(((1,0),(1,0)))(x)
-    x = DarknetConv2D_BN_Leaky(num_filters, (3,3), strides=(2,2))(x)
-    for i in range(num_blocks):
-        y = compose(
-                DarknetConv2D_BN_Leaky(num_filters//2, (1,1)),
-                DarknetConv2D_BN_Leaky(num_filters, (3,3)))(x)
-        x = Add()([x,y])
-    return x
-
-def darknet_body(x):
-    '''Darknent body having 52 Convolution2D layers'''
-    x = DarknetConv2D_BN_Leaky(32, (3,3))(x)
-    x = resblock_body(x, 64, 1)
-    x = resblock_body(x, 128, 2)
-    x = resblock_body(x, 256, 8)
-    x = resblock_body(x, 512, 8)
-    x = resblock_body(x, 1024, 4)
-    return x
-
-def make_last_layers(x, num_filters, out_filters):
-    '''6 Conv2D_BN_Leaky layers followed by a Conv2D_linear layer'''
-    x = compose(
-            DarknetConv2D_BN_Leaky(num_filters, (1,1)),
-            DarknetConv2D_BN_Leaky(num_filters*2, (3,3)),
-            DarknetConv2D_BN_Leaky(num_filters, (1,1)),
-            DarknetConv2D_BN_Leaky(num_filters*2, (3,3)),
-            DarknetConv2D_BN_Leaky(num_filters, (1,1)))(x)
-    y = compose(
-            DarknetConv2D_BN_Leaky(num_filters*2, (3,3)),
-            DarknetConv2D(out_filters, (1,1)))(x)
-    return x, y
+_ANCHORS = [(10, 13), (16, 30), (33, 23),
+            (30, 61), (62, 45), (59, 119),
+            (116, 90), (156, 198), (373, 326)]
 
 
-def yolo_body(inputs, num_anchors, num_classes):
-    """Create YOLO_V3 model CNN body in Keras."""
-    darknet = Model(inputs, darknet_body(inputs))
-    x, y1 = make_last_layers(darknet.output, 512, num_anchors*(num_classes+5))
+def darknet53(inputs):
+    """
+    Builds Darknet-53 model.
+    """
+    inputs = _conv2d_fixed_padding(inputs, 32, 3)
+    inputs = _conv2d_fixed_padding(inputs, 64, 3, strides=2)
+    inputs = _darknet53_block(inputs, 32)
+    inputs = _conv2d_fixed_padding(inputs, 128, 3, strides=2)
 
-    x = compose(
-            DarknetConv2D_BN_Leaky(256, (1,1)),
-            UpSampling2D(2))(x)
-    x = Concatenate()([x,darknet.layers[152].output])
-    x, y2 = make_last_layers(x, 256, num_anchors*(num_classes+5))
+    for i in range(2):
+        inputs = _darknet53_block(inputs, 64)
 
-    x = compose(
-            DarknetConv2D_BN_Leaky(128, (1,1)),
-            UpSampling2D(2))(x)
-    x = Concatenate()([x,darknet.layers[92].output])
-    x, y3 = make_last_layers(x, 128, num_anchors*(num_classes+5))
+    inputs = _conv2d_fixed_padding(inputs, 256, 3, strides=2)
 
-    return Model(inputs, [y1,y2,y3])
+    for i in range(8):
+        inputs = _darknet53_block(inputs, 128)
 
-def tiny_yolo_body(inputs, num_anchors, num_classes):
-    '''Create Tiny YOLO_v3 model CNN body in keras.'''
-    x1 = compose(
-            DarknetConv2D_BN_Leaky(16, (3,3)),
-            MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same'),
-            DarknetConv2D_BN_Leaky(32, (3,3)),
-            MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same'),
-            DarknetConv2D_BN_Leaky(64, (3,3)),
-            MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same'),
-            DarknetConv2D_BN_Leaky(128, (3,3)),
-            MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same'),
-            DarknetConv2D_BN_Leaky(256, (3,3)))(inputs)
-    x2 = compose(
-            MaxPooling2D(pool_size=(2,2), strides=(2,2), padding='same'),
-            DarknetConv2D_BN_Leaky(512, (3,3)),
-            MaxPooling2D(pool_size=(2,2), strides=(1,1), padding='same'),
-            DarknetConv2D_BN_Leaky(1024, (3,3)),
-            DarknetConv2D_BN_Leaky(256, (1,1)))(x1)
-    y1 = compose(
-            DarknetConv2D_BN_Leaky(512, (3,3)),
-            DarknetConv2D(num_anchors*(num_classes+5), (1,1)))(x2)
+    route_1 = inputs
+    inputs = _conv2d_fixed_padding(inputs, 512, 3, strides=2)
 
-    x2 = compose(
-            DarknetConv2D_BN_Leaky(128, (1,1)),
-            UpSampling2D(2))(x2)
-    y2 = compose(
-            Concatenate(),
-            DarknetConv2D_BN_Leaky(256, (3,3)),
-            DarknetConv2D(num_anchors*(num_classes+5), (1,1)))([x2,x1])
+    for i in range(8):
+        inputs = _darknet53_block(inputs, 256)
 
-    return Model(inputs, [y1,y2])
+    route_2 = inputs
+    inputs = _conv2d_fixed_padding(inputs, 1024, 3, strides=2)
+
+    for i in range(4):
+        inputs = _darknet53_block(inputs, 512)
+
+    return route_1, route_2, inputs
 
 
-def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
-    """Convert final layer features to bounding box parameters."""
+def _conv2d_fixed_padding(inputs, filters, kernel_size, strides=1):
+    if strides > 1:
+        inputs = _fixed_padding(inputs, kernel_size)
+    inputs = slim.conv2d(inputs, filters, kernel_size, stride=strides,
+                         padding=('SAME' if strides == 1 else 'VALID'))
+    return inputs
+
+
+def _darknet53_block(inputs, filters):
+    shortcut = inputs
+    inputs = _conv2d_fixed_padding(inputs, filters, 1)
+    inputs = _conv2d_fixed_padding(inputs, filters * 2, 3)
+
+    inputs = inputs + shortcut
+    return inputs
+
+
+@tf.contrib.framework.add_arg_scope
+def _fixed_padding(inputs, kernel_size, mode='CONSTANT', **kwargs):
+    """
+    Pads the input along the spatial dimensions independently of input size.
+
+    Args:
+      inputs: A tensor of size [batch, channels, height_in, width_in] or
+        [batch, height_in, width_in, channels] depending on data_format.
+      kernel_size: The kernel to be used in the conv2d or max_pool2d operation.
+                   Should be a positive integer.
+      data_format: The input format ('NHWC' or 'NCHW').
+      mode: The mode for tf.pad.
+
+    Returns:
+      A tensor with the same format as the input with the data either intact
+      (if kernel_size == 1) or padded (if kernel_size > 1).
+    """
+    pad_total = kernel_size - 1
+    pad_beg = pad_total // 2
+    pad_end = pad_total - pad_beg
+
+    if kwargs['data_format'] == 'NCHW':
+        padded_inputs = tf.pad(inputs, [[0, 0], [0, 0],
+                                        [pad_beg, pad_end],
+                                        [pad_beg, pad_end]],
+                               mode=mode)
+    else:
+        padded_inputs = tf.pad(inputs, [[0, 0], [pad_beg, pad_end],
+                                        [pad_beg, pad_end], [0, 0]], mode=mode)
+    return padded_inputs
+
+
+def _yolo_block(inputs, filters):
+    inputs = _conv2d_fixed_padding(inputs, filters, 1)
+    inputs = _conv2d_fixed_padding(inputs, filters * 2, 3)
+    inputs = _conv2d_fixed_padding(inputs, filters, 1)
+    inputs = _conv2d_fixed_padding(inputs, filters * 2, 3)
+    inputs = _conv2d_fixed_padding(inputs, filters, 1)
+    route = inputs
+    inputs = _conv2d_fixed_padding(inputs, filters * 2, 3)
+    return route, inputs
+
+
+def _get_size(shape, data_format):
+    if len(shape) == 4:
+        shape = shape[1:]
+    return shape[1:3] if data_format == 'NCHW' else shape[0:2]
+
+
+def _detection_layer(inputs, num_classes, anchors, img_size, data_format):
     num_anchors = len(anchors)
-    # Reshape to batch, height, width, num_anchors, box_params.
-    anchors_tensor = K.reshape(K.constant(anchors), [1, 1, 1, num_anchors, 2])
+    predictions = slim.conv2d(inputs, num_anchors * (5 + num_classes), 1,
+                              stride=1, normalizer_fn=None,
+                              activation_fn=None,
+                              biases_initializer=tf.zeros_initializer())
 
-    grid_shape = K.shape(feats)[1:3] # height, width
-    grid_y = K.tile(K.reshape(K.arange(0, stop=grid_shape[0]), [-1, 1, 1, 1]),
-        [1, grid_shape[1], 1, 1])
-    grid_x = K.tile(K.reshape(K.arange(0, stop=grid_shape[1]), [1, -1, 1, 1]),
-        [grid_shape[0], 1, 1, 1])
-    grid = K.concatenate([grid_x, grid_y])
-    grid = K.cast(grid, K.dtype(feats))
+    shape = predictions.get_shape().as_list()
+    grid_size = _get_size(shape, data_format)
+    dim = grid_size[0] * grid_size[1]
+    bbox_attrs = 5 + num_classes
 
-    feats = K.reshape(
-        feats, [-1, grid_shape[0], grid_shape[1], num_anchors, num_classes + 5])
+    if data_format == 'NCHW':
+        predictions = tf.reshape(
+            predictions, [-1, num_anchors * bbox_attrs, dim])
+        predictions = tf.transpose(predictions, [0, 2, 1])
 
-    # Adjust preditions to each spatial grid point and anchor size.
-    box_xy = (K.sigmoid(feats[..., :2]) + grid) / K.cast(grid_shape[::-1], K.dtype(feats))
-    box_wh = K.exp(feats[..., 2:4]) * anchors_tensor / K.cast(input_shape[::-1], K.dtype(feats))
-    box_confidence = K.sigmoid(feats[..., 4:5])
-    box_class_probs = K.sigmoid(feats[..., 5:])
+    predictions = tf.reshape(predictions, [-1, num_anchors * dim, bbox_attrs])
 
-    if calc_loss == True:
-        return grid, feats, box_xy, box_wh
-    return box_xy, box_wh, box_confidence, box_class_probs
+    stride = (img_size[0] // grid_size[0], img_size[1] // grid_size[1])
 
+    anchors = [(a[0] / stride[0], a[1] / stride[1]) for a in anchors]
 
-def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
-    '''Get corrected boxes'''
-    box_yx = box_xy[..., ::-1]
-    box_hw = box_wh[..., ::-1]
-    input_shape = K.cast(input_shape, K.dtype(box_yx))
-    image_shape = K.cast(image_shape, K.dtype(box_yx))
-    new_shape = K.round(image_shape * K.min(input_shape/image_shape))
-    offset = (input_shape-new_shape)/2./input_shape
-    scale = input_shape/new_shape
-    box_yx = (box_yx - offset) * scale
-    box_hw *= scale
+    box_centers, box_sizes, confidence, classes = tf.split(
+        predictions, [2, 2, 1, num_classes], axis=-1)
 
-    box_mins = box_yx - (box_hw / 2.)
-    box_maxes = box_yx + (box_hw / 2.)
-    boxes =  K.concatenate([
-        box_mins[..., 0:1],  # y_min
-        box_mins[..., 1:2],  # x_min
-        box_maxes[..., 0:1],  # y_max
-        box_maxes[..., 1:2]  # x_max
-    ])
+    box_centers = tf.nn.sigmoid(box_centers)
+    confidence = tf.nn.sigmoid(confidence)
 
-    # Scale boxes back to original image shape.
-    boxes *= K.concatenate([image_shape, image_shape])
-    return boxes
+    grid_x = tf.range(grid_size[0], dtype=tf.float32)
+    grid_y = tf.range(grid_size[1], dtype=tf.float32)
+    a, b = tf.meshgrid(grid_x, grid_y)
 
+    x_offset = tf.reshape(a, (-1, 1))
+    y_offset = tf.reshape(b, (-1, 1))
 
-def yolo_boxes_and_scores(feats, anchors, num_classes, input_shape, image_shape):
-    '''Process Conv layer output'''
-    box_xy, box_wh, box_confidence, box_class_probs = yolo_head(feats,
-        anchors, num_classes, input_shape)
-    boxes = yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape)
-    boxes = K.reshape(boxes, [-1, 4])
-    box_scores = box_confidence * box_class_probs
-    box_scores = K.reshape(box_scores, [-1, num_classes])
-    return boxes, box_scores
+    x_y_offset = tf.concat([x_offset, y_offset], axis=-1)
+    x_y_offset = tf.reshape(tf.tile(x_y_offset, [1, num_anchors]), [1, -1, 2])
+
+    box_centers = box_centers + x_y_offset
+    box_centers = box_centers * stride
+
+    anchors = tf.tile(anchors, [dim, 1])
+    box_sizes = tf.exp(box_sizes) * tf.to_float(anchors)
+    box_sizes = box_sizes * stride
+
+    detections = tf.concat([box_centers, box_sizes, confidence], axis=-1)
+
+    classes = tf.nn.sigmoid(classes)
+    predictions = tf.concat([detections, classes], axis=-1)
+    return predictions
 
 
-def yolo_eval(yolo_outputs,
-              anchors,
-              num_classes,
-              image_shape,
-              max_boxes=20,
-              score_threshold=.6,
-              iou_threshold=.5):
-    """Evaluate YOLO model on given input and return filtered boxes."""
-    num_layers = len(yolo_outputs)
-    anchor_mask = [[6,7,8], [3,4,5], [0,1,2]] if num_layers==3 else [[3,4,5], [1,2,3]] # default setting
-    input_shape = K.shape(yolo_outputs[0])[1:3] * 32
-    boxes = []
-    box_scores = []
-    for l in range(num_layers):
-        _boxes, _box_scores = yolo_boxes_and_scores(yolo_outputs[l],
-            anchors[anchor_mask[l]], num_classes, input_shape, image_shape)
-        boxes.append(_boxes)
-        box_scores.append(_box_scores)
-    boxes = K.concatenate(boxes, axis=0)
-    box_scores = K.concatenate(box_scores, axis=0)
+def _upsample(inputs, out_shape, data_format='NHWC'):
+    # tf.image.resize_nearest_neighbor accepts input in format NHWC
+    if data_format == 'NCHW':
+        inputs = tf.transpose(inputs, [0, 2, 3, 1])
 
-    mask = box_scores >= score_threshold
-    max_boxes_tensor = K.constant(max_boxes, dtype='int32')
-    boxes_ = []
-    scores_ = []
-    classes_ = []
-    for c in range(num_classes):
-        # TODO: use keras backend instead of tf.
-        class_boxes = tf.boolean_mask(boxes, mask[:, c])
-        class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
-        nms_index = tf.image.non_max_suppression(
-            class_boxes, class_box_scores, max_boxes_tensor, iou_threshold=iou_threshold)
-        class_boxes = K.gather(class_boxes, nms_index)
-        class_box_scores = K.gather(class_box_scores, nms_index)
-        classes = K.ones_like(class_box_scores, 'int32') * c
-        boxes_.append(class_boxes)
-        scores_.append(class_box_scores)
-        classes_.append(classes)
-    boxes_ = K.concatenate(boxes_, axis=0)
-    scores_ = K.concatenate(scores_, axis=0)
-    classes_ = K.concatenate(classes_, axis=0)
+    if data_format == 'NCHW':
+        new_height = out_shape[3]
+        new_width = out_shape[2]
+    else:
+        new_height = out_shape[2]
+        new_width = out_shape[1]
 
-    return boxes_, scores_, classes_
+    inputs = tf.image.resize_nearest_neighbor(inputs, (new_height, new_width))
+
+    # back to NCHW if needed
+    if data_format == 'NCHW':
+        inputs = tf.transpose(inputs, [0, 3, 1, 2])
+
+    inputs = tf.identity(inputs, name='upsampled')
+    return inputs
 
 
-def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
-    '''Preprocess true boxes to training input format
+def yolo_v3(inputs, num_classes, is_training=False, data_format='NHWC', reuse=False):
+    """
+    Creates YOLO v3 model.
 
-    Parameters
-    ----------
-    true_boxes: array, shape=(m, T, 5)
-        Absolute x_min, y_min, x_max, y_max, class_id relative to input_shape.
-    input_shape: array-like, hw, multiples of 32
-    anchors: array, shape=(N, 2), wh
-    num_classes: integer
+    :param inputs: a 4-D tensor of size [batch_size, height, width, channels].
+        Dimension batch_size may be undefined. The channel order is RGB.
+    :param num_classes: number of predicted classes.
+    :param is_training: whether is training or not.
+    :param data_format: data format NCHW or NHWC.
+    :param reuse: whether or not the network and its variables should be reused.
+    :return:
+    """
+    # it will be needed later on
+    img_size = inputs.get_shape().as_list()[1:3]
 
-    Returns
-    -------
-    y_true: list of array, shape like yolo_outputs, xywh are reletive value
+    # transpose the inputs to NCHW
+    if data_format == 'NCHW':
+        inputs = tf.transpose(inputs, [0, 3, 1, 2])
 
-    '''
-    assert (true_boxes[..., 4]<num_classes).all(), 'class id must be less than num_classes'
-    num_layers = len(anchors)//3 # default setting
-    anchor_mask = [[6,7,8], [3,4,5], [0,1,2]] if num_layers==3 else [[3,4,5], [1,2,3]]
+    # normalize values to range [0..1]
+    inputs = inputs / 255
 
-    true_boxes = np.array(true_boxes, dtype='float32')
-    input_shape = np.array(input_shape, dtype='int32')
-    boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2
-    boxes_wh = true_boxes[..., 2:4] - true_boxes[..., 0:2]
-    true_boxes[..., 0:2] = boxes_xy/input_shape[::-1]
-    true_boxes[..., 2:4] = boxes_wh/input_shape[::-1]
+    # set batch norm params
+    batch_norm_params = {
+        'decay': _BATCH_NORM_DECAY,
+        'epsilon': _BATCH_NORM_EPSILON,
+        'scale': True,
+        'is_training': is_training,
+        'fused': None,  # Use fused batch norm if possible.
+    }
 
-    m = true_boxes.shape[0]
-    grid_shapes = [input_shape//{0:32, 1:16, 2:8}[l] for l in range(num_layers)]
-    y_true = [np.zeros((m,grid_shapes[l][0],grid_shapes[l][1],len(anchor_mask[l]),5+num_classes),
-        dtype='float32') for l in range(num_layers)]
+    # Set activation_fn and parameters for conv2d, batch_norm.
+    with slim.arg_scope([slim.conv2d, slim.batch_norm, _fixed_padding], data_format=data_format, reuse=reuse):
+        with slim.arg_scope([slim.conv2d], normalizer_fn=slim.batch_norm,
+                            normalizer_params=batch_norm_params,
+                            biases_initializer=None,
+                            activation_fn=lambda x: tf.nn.leaky_relu(x, alpha=_LEAKY_RELU)):
+            with tf.variable_scope('darknet-53'):
+                route_1, route_2, inputs = darknet53(inputs)
 
-    # Expand dim to apply broadcasting.
-    anchors = np.expand_dims(anchors, 0)
-    anchor_maxes = anchors / 2.
-    anchor_mins = -anchor_maxes
-    valid_mask = boxes_wh[..., 0]>0
+            with tf.variable_scope('yolo-v3'):
+                route, inputs = _yolo_block(inputs, 512)
+                detect_1 = _detection_layer(
+                    inputs, num_classes, _ANCHORS[6:9], img_size, data_format)
+                detect_1 = tf.identity(detect_1, name='detect_1')
 
-    for b in range(m):
-        # Discard zero rows.
-        wh = boxes_wh[b, valid_mask[b]]
-        if len(wh)==0: continue
-        # Expand dim to apply broadcasting.
-        wh = np.expand_dims(wh, -2)
-        box_maxes = wh / 2.
-        box_mins = -box_maxes
+                inputs = _conv2d_fixed_padding(route, 256, 1)
+                upsample_size = route_2.get_shape().as_list()
+                inputs = _upsample(inputs, upsample_size, data_format)
+                inputs = tf.concat([inputs, route_2],
+                                   axis=1 if data_format == 'NCHW' else 3)
 
-        intersect_mins = np.maximum(box_mins, anchor_mins)
-        intersect_maxes = np.minimum(box_maxes, anchor_maxes)
-        intersect_wh = np.maximum(intersect_maxes - intersect_mins, 0.)
-        intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
-        box_area = wh[..., 0] * wh[..., 1]
-        anchor_area = anchors[..., 0] * anchors[..., 1]
-        iou = intersect_area / (box_area + anchor_area - intersect_area)
+                route, inputs = _yolo_block(inputs, 256)
 
-        # Find best anchor for each true box
-        best_anchor = np.argmax(iou, axis=-1)
+                detect_2 = _detection_layer(
+                    inputs, num_classes, _ANCHORS[3:6], img_size, data_format)
+                detect_2 = tf.identity(detect_2, name='detect_2')
 
-        for t, n in enumerate(best_anchor):
-            for l in range(num_layers):
-                if n in anchor_mask[l]:
-                    i = np.floor(true_boxes[b,t,0]*grid_shapes[l][1]).astype('int32')
-                    j = np.floor(true_boxes[b,t,1]*grid_shapes[l][0]).astype('int32')
-                    k = anchor_mask[l].index(n)
-                    c = true_boxes[b,t, 4].astype('int32')
-                    y_true[l][b, j, i, k, 0:4] = true_boxes[b,t, 0:4]
-                    y_true[l][b, j, i, k, 4] = 1
-                    y_true[l][b, j, i, k, 5+c] = 1
+                inputs = _conv2d_fixed_padding(route, 128, 1)
+                upsample_size = route_1.get_shape().as_list()
+                inputs = _upsample(inputs, upsample_size, data_format)
+                inputs = tf.concat([inputs, route_1],
+                                   axis=1 if data_format == 'NCHW' else 3)
 
-    return y_true
+                _, inputs = _yolo_block(inputs, 128)
 
+                detect_3 = _detection_layer(
+                    inputs, num_classes, _ANCHORS[0:3], img_size, data_format)
+                detect_3 = tf.identity(detect_3, name='detect_3')
 
-def box_iou(b1, b2):
-    '''Return iou tensor
-
-    Parameters
-    ----------
-    b1: tensor, shape=(i1,...,iN, 4), xywh
-    b2: tensor, shape=(j, 4), xywh
-
-    Returns
-    -------
-    iou: tensor, shape=(i1,...,iN, j)
-
-    '''
-
-    # Expand dim to apply broadcasting.
-    b1 = K.expand_dims(b1, -2)
-    b1_xy = b1[..., :2]
-    b1_wh = b1[..., 2:4]
-    b1_wh_half = b1_wh/2.
-    b1_mins = b1_xy - b1_wh_half
-    b1_maxes = b1_xy + b1_wh_half
-
-    # Expand dim to apply broadcasting.
-    b2 = K.expand_dims(b2, 0)
-    b2_xy = b2[..., :2]
-    b2_wh = b2[..., 2:4]
-    b2_wh_half = b2_wh/2.
-    b2_mins = b2_xy - b2_wh_half
-    b2_maxes = b2_xy + b2_wh_half
-
-    intersect_mins = K.maximum(b1_mins, b2_mins)
-    intersect_maxes = K.minimum(b1_maxes, b2_maxes)
-    intersect_wh = K.maximum(intersect_maxes - intersect_mins, 0.)
-    intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
-    b1_area = b1_wh[..., 0] * b1_wh[..., 1]
-    b2_area = b2_wh[..., 0] * b2_wh[..., 1]
-    iou = intersect_area / (b1_area + b2_area - intersect_area)
-
-    return iou
-
-
-def yolo_loss(args, anchors, num_classes, ignore_thresh=.5, print_loss=False):
-    '''Return yolo_loss tensor
-
-    Parameters
-    ----------
-    yolo_outputs: list of tensor, the output of yolo_body or tiny_yolo_body
-    y_true: list of array, the output of preprocess_true_boxes
-    anchors: array, shape=(N, 2), wh
-    num_classes: integer
-    ignore_thresh: float, the iou threshold whether to ignore object confidence loss
-
-    Returns
-    -------
-    loss: tensor, shape=(1,)
-
-    '''
-    num_layers = len(anchors)//3 # default setting
-    yolo_outputs = args[:num_layers]
-    y_true = args[num_layers:]
-    anchor_mask = [[6,7,8], [3,4,5], [0,1,2]] if num_layers==3 else [[3,4,5], [1,2,3]]
-    input_shape = K.cast(K.shape(yolo_outputs[0])[1:3] * 32, K.dtype(y_true[0]))
-    grid_shapes = [K.cast(K.shape(yolo_outputs[l])[1:3], K.dtype(y_true[0])) for l in range(num_layers)]
-    loss = 0
-    m = K.shape(yolo_outputs[0])[0] # batch size, tensor
-    mf = K.cast(m, K.dtype(yolo_outputs[0]))
-
-    for l in range(num_layers):
-        object_mask = y_true[l][..., 4:5]
-        true_class_probs = y_true[l][..., 5:]
-
-        grid, raw_pred, pred_xy, pred_wh = yolo_head(yolo_outputs[l],
-             anchors[anchor_mask[l]], num_classes, input_shape, calc_loss=True)
-        pred_box = K.concatenate([pred_xy, pred_wh])
-
-        # Darknet raw box to calculate loss.
-        raw_true_xy = y_true[l][..., :2]*grid_shapes[l][::-1] - grid
-        raw_true_wh = K.log(y_true[l][..., 2:4] / anchors[anchor_mask[l]] * input_shape[::-1])
-        raw_true_wh = K.switch(object_mask, raw_true_wh, K.zeros_like(raw_true_wh)) # avoid log(0)=-inf
-        box_loss_scale = 2 - y_true[l][...,2:3]*y_true[l][...,3:4]
-
-        # Find ignore mask, iterate over each of batch.
-        ignore_mask = tf.TensorArray(K.dtype(y_true[0]), size=1, dynamic_size=True)
-        object_mask_bool = K.cast(object_mask, 'bool')
-        def loop_body(b, ignore_mask):
-            true_box = tf.boolean_mask(y_true[l][b,...,0:4], object_mask_bool[b,...,0])
-            iou = box_iou(pred_box[b], true_box)
-            best_iou = K.max(iou, axis=-1)
-            ignore_mask = ignore_mask.write(b, K.cast(best_iou<ignore_thresh, K.dtype(true_box)))
-            return b+1, ignore_mask
-        _, ignore_mask = K.control_flow_ops.while_loop(lambda b,*args: b<m, loop_body, [0, ignore_mask])
-        ignore_mask = ignore_mask.stack()
-        ignore_mask = K.expand_dims(ignore_mask, -1)
-
-        # K.binary_crossentropy is helpful to avoid exp overflow.
-        xy_loss = object_mask * box_loss_scale * K.binary_crossentropy(raw_true_xy, raw_pred[...,0:2], from_logits=True)
-        wh_loss = object_mask * box_loss_scale * 0.5 * K.square(raw_true_wh-raw_pred[...,2:4])
-        confidence_loss = object_mask * K.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True)+ \
-            (1-object_mask) * K.binary_crossentropy(object_mask, raw_pred[...,4:5], from_logits=True) * ignore_mask
-        class_loss = object_mask * K.binary_crossentropy(true_class_probs, raw_pred[...,5:], from_logits=True)
-
-        xy_loss = K.sum(xy_loss) / mf
-        wh_loss = K.sum(wh_loss) / mf
-        confidence_loss = K.sum(confidence_loss) / mf
-        class_loss = K.sum(class_loss) / mf
-        loss += xy_loss + wh_loss + confidence_loss + class_loss
-        if print_loss:
-            loss = tf.Print(loss, [loss, xy_loss, wh_loss, confidence_loss, class_loss, K.sum(ignore_mask)], message='loss: ')
-    return loss
+                detections = tf.concat([detect_1, detect_2, detect_3], axis=1)
+                detections = tf.identity(detections, name='detections')
+                return detections
