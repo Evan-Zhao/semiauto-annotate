@@ -1,122 +1,105 @@
-from typing import Iterable
-from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QFont, QPen, QPainterPath
 
-from .shape import Shape
+from labelme.app import Application
+from .shape import Shape, DEFAULT_LINE_COLOR
 
 TEXT_COLOR = QColor(0, 255, 0, 128)
 
 
 class PoseShape(Shape):
+    forced_type = 'linestrip'
     forced_label = 'person'
+    body_segs = [
+        [1, 2, 3, 4], [1, 5, 6, 7],
+        [1, 8, 9, 10], [1, 11, 12, 13], [1, 0],
+        [0, 14, 16, 2], [0, 15, 17, 5]
+    ]
+    n_pose_points = 18
 
-    class PointIndexer:
-        def __init__(self, shapes):
-            self._point_to_shape = {(p.x(), p.y()): s for s in shapes for p in s}
-            self._index_to_shape_idx = {}
-            index, shape_index_start = 0, 0
-            for s in shapes:
-                shape_index_start = index
-                for _ in s:
-                    self._index_to_shape_idx[index] = (s, shape_index_start)
-                    index += 1
-
-        def get_shape(self, p):
-            return self._point_to_shape[(p.x(), p.y())]
-
-        def get_shape_and_index(self, i):
-            shape, idx_start = self._index_to_shape_idx[i]
-            return shape, i - idx_start
-
-    def __init__(self, children, annotation=None):
-        all_points = [p for s in children for p in s]
+    def __init__(self, maybe_points):
+        points = [p for p in maybe_points if p is not None]
         super(PoseShape, self).__init__(
-            all_points, form=[
-                [PoseShape.forced_label, None, None],
-                [None] * 3
+            points, form=[
+                [PoseShape.forced_label, None, None]
             ],  # dummy form for navigation of label dialog
-            shape_type=PoseShape.forced_label
+            shape_type=PoseShape.forced_type
         )
-        if issubclass(type(annotation), dict):
-            self.annotation = annotation
-        elif issubclass(type(annotation), Iterable):
-            self.annotation = {}
-            counter = 0
-            for vs in annotation:
-                for v in vs:
-                    self.annotation[counter] = v
-                    counter += 1
-        else:
-            self.annotation = {}
-        self._shapes = children
-        for s in children:
-            s.form = self.form
-        self._point_indexer = PoseShape.PointIndexer(children)
+        # self.maybe_points = maybe_points
+        self.point_to_label = self.make_point_to_label(maybe_points)
+
+    @staticmethod
+    def make_point_to_label(maybe_points):
+        shape_idx_to_body_idx = {}
+        real_idx = 0
+        for i, p in enumerate(maybe_points):
+            if p is None:
+                continue
+            shape_idx_to_body_idx[real_idx] = i
+            real_idx += 1
+        return shape_idx_to_body_idx
 
     @property
     def label(self):
         return PoseShape.forced_label
 
+    @property
+    def maybe_points(self):
+        ret = [None for _ in range(self.n_pose_points)]
+        for i1, i2 in self.point_to_label.items():
+            ret[i2] = self.points[i1]
+        return ret
+
+    @property
+    def chains(self):
+        chains = []
+        for seg in self.body_segs:
+            points = [p for p in [self.maybe_points[i] for i in seg] if p is not None]
+            if not points:
+                continue
+            chains.append(points)
+        return chains
+
     @staticmethod
     def get_paint_font(scale):
         return QFont('Helvetica', 16 / scale)
 
+    def paint_chain(self, painter, chain, color, scale):
+        pen = QPen(color)
+        # Try using integer sizes for smoother drawing(?)
+        pen.setWidth(max(1, int(round(self.line_width / scale))))
+        painter.setPen(pen)
+        line_path = self.get_line_path(chain, self.shape_type)
+        painter.drawPath(line_path)
+
     def paint(self, painter, fill=False, canvas=None):
         scale = self.get_scale(canvas)
-        for s in self._shapes:
-            s.paint(painter, fill, canvas)
-        dotted_pen = QPen(self.label_color)
-        dotted_pen.setWidth(max(1, int(round(2.0 / scale))))
-        dotted_pen.setStyle(Qt.DashLine)
-        painter.setPen(dotted_pen)
-        dotted_line_path = QPainterPath()
-        for s1, s2 in zip(self._shapes, self._shapes[1:]):
-            dotted_line_path.moveTo(s1[0])
-            dotted_line_path.lineTo(s2[0])
-            dotted_line_path.moveTo(s1[-1])
-            dotted_line_path.lineTo(s2[-1])
-        painter.drawPath(dotted_line_path)
-        if self.annotation:
+        # Draw all vertices
+        self.paint_vertices(
+            painter, self.points, scale,
+            self._highlightIndex, self._highlightMode
+        )
+        mainwindow = Application.get_main_window()
+        color = self.label_color or mainwindow.lineColor or DEFAULT_LINE_COLOR
+        for ch in self.chains:
+            self.paint_chain(painter, ch, color, scale)
+        for i, p in enumerate(self.points):
             text_pen = QPen(TEXT_COLOR)
             text_pen.setWidth(max(1, int(round(1.0 / scale))))
             painter.setPen(text_pen)
             text_path = QPainterPath()
             font = self.get_paint_font(scale)
             painter.setFont(font)
-            for k, v in self.annotation.items():
-                point = self.points[k]
-                painter.drawText(point, str(v))
+            label = str(self.point_to_label[i])
+            painter.drawText(p, label)
             painter.drawPath(text_path)
-
-    def highlightVertex(self, i, action):
-        """Send highlight vertex index to the shape it belongs in."""
-        shape, i = self._point_indexer.get_shape_and_index(i)
-        shape.highlightVertex(i, action)
-
-    def highlightClear(self):
-        """Clear highlight of ALL sub-shapes."""
-        for s in self._shapes:
-            s.highlightClear()
-
-    def moveBy(self, offset):
-        super(PoseShape, self).moveBy(offset)
-        for s in self._shapes:
-            s.moveBy(offset)
-
-    def moveVertexBy(self, i, offset):
-        super(PoseShape, self).moveVertexBy(i, offset)
-        shape, i = self._point_indexer.get_shape_and_index(i)
-        shape.moveVertexBy(i, offset)
-
-    def set_label(self, annotation):
-        self.annotation = annotation
+        if fill:
+            fill_path = self.get_line_path(self.points, 'polygon')
+            painter.fillPath(fill_path, color)
 
     def __getstate__(self):
         return dict(
-            annotation=self.annotation,
-            sub_shapes=self._shapes
+            maybe_points=self.maybe_points
         )
 
     def __setstate__(self, state):
-        annotation = {int(k): v for k, v in state['annotation'].items()}
-        self.__init__(state['sub_shapes'], annotation=annotation)
+        self.__init__(state['maybe_points'])

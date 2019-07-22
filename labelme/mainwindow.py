@@ -412,7 +412,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = self.labelList.get_shape_from_item(item)
         if shape is None:
             return
-        text, form, annotation = self.labelDialog.popUp(shape)
+        text, form, shapes = self.labelDialog.popUp(shape)
         if text is None:
             return
         if not self.validateLabel(text):
@@ -420,9 +420,9 @@ class MainWindow(QtWidgets.QMainWindow):
                               "Invalid label '{}' with validation type '{}'"
                               .format(text, Config.get('validate_label')))
             return
-        if annotation:
-            # TODO: may need to convert to PoseShape first
-            shape.set_label(annotation)
+        if shapes:
+            self.canvas.loadShapes(shapes)
+            self.loadShapes(shapes)
         else:
             shape.set_label(form)
         item.setText(text)
@@ -573,7 +573,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     instance_text = previous_label
                 if instance_text != '':
                     text = instance_text
-            text, form, annotation = self.labelDialog.popUp(self.canvas.shapes[-1], text=text)
+            text, form, shapes = self.labelDialog.popUp(self.canvas.shapes[-1], text=text)
 
         if text and not self.validateLabel(text):
             self.errorMessage('Invalid label',
@@ -582,13 +582,12 @@ class MainWindow(QtWidgets.QMainWindow):
             text = ''
         if text:
             self.labelList.clearSelection()
-            self.addLabel(self.canvas.setLastLabel(form, annotation))
+            self.addLabel(self.canvas.setLastLabel(form, shapes))
             self.action_storage.refresh_all()
             self.setDirty()
         else:
             self.canvas.undoLastLine()
             self.canvas.shapesBackups.pop()
-        self.labelDialog.label_set()
 
     def scrollRequest(self, delta, orientation):
         units = - delta * 0.1  # natural scroll

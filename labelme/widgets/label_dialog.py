@@ -6,7 +6,7 @@ from qtpy import QtWidgets
 QT5 = QT_VERSION[0] == '5'  # NOQA
 
 from labelme.logger import logger
-from labelme.custom_widgets import PoseAnnotationDialog
+from labelme.custom_widgets import PoseAnnotationWidget
 import labelme.utils
 
 from collections import MutableMapping
@@ -71,12 +71,13 @@ class UILabelDialog(object):
     _flags = '__flags'
     _placeholder = 'Enter object label'
 
-    def __init__(self, labels, parent_dialog):
+    def __init__(self, labels, parent_dialog, parent_canvas):
         from labelme.utils import Config
 
         self.splitter = QtWidgets.QSplitter()
         self.spec = MultiLevelDict(labels)
         self.parent_dialog = parent_dialog
+        self.parent_canvas = parent_canvas
         self.boxes = []
         self._using_dialog_box = False
         # Turns off slot response
@@ -220,15 +221,12 @@ class UILabelDialog(object):
         v_layout.addWidget(special)
         return group_box
 
-    @staticmethod
-    def make_two_button_box(dialog):
-        group_box, v_layout = UILabelDialog.make_empty_group_box(parent=dialog)
-        join_button = QtWidgets.QPushButton(parent=group_box, text='Join more shapes')
-        join_button.clicked.connect(dialog.open_join_dialog)
-        key_points_button = QtWidgets.QPushButton(parent=group_box, text='Annotate key points')
-        key_points_button.clicked.connect(dialog.open_pose_dialog)
-        v_layout.addWidget(join_button)
-        v_layout.addWidget(key_points_button)
+    def make_pose_group_box(self, dialog, canvas):
+        group_box, v_layout = UILabelDialog.make_empty_group_box(parent=self.parent_dialog)
+        pose_widget = PoseAnnotationWidget(
+            self.parent_dialog, self.parent_canvas, self.parent_dialog._selected_shape
+        )
+        v_layout.addWidget(pose_widget)
         return group_box
 
     @staticmethod
@@ -297,6 +295,7 @@ class UILabelDialog(object):
         if len(all_sel) < len(self.group_boxes):
             # Some label list has no selection.
             return None, None
+        alt_shapes = None
         for level, box in enumerate(self.group_boxes):
             box = self.boxes[level]
             parent_selected = all_sel[:level]
@@ -313,11 +312,10 @@ class UILabelDialog(object):
                     special_flags_box = self.get_special_flags_from_box(box)
                     special_flags = read_flags_box(special_flags_box, child_spec)
             form.append([level_selected, flags, special_flags])
-        pose_result = None
         if self._using_dialog_box:
-            pose_dialog = self.parent_dialog.pose_dialog
-            pose_result = pose_dialog.point_idx_to_label if pose_dialog else None
-        return form, pose_result
+            pose_widget = self.boxes[-1].layout().itemAt(0).widget()
+            alt_shapes = pose_widget.get_shapes()
+        return form, alt_shapes
 
     @staticmethod
     def get_first_label_from_state(state):
@@ -387,7 +385,7 @@ class UILabelDialog(object):
         if type(spec) is str:
             if self.translate_flag(spec) != 'canvas':
                 return
-            group_box = self.make_two_button_box(self.parent_dialog)
+            group_box = self.make_pose_group_box(self.parent_dialog, self.parent_canvas)
             self._using_dialog_box = True
         else:
             labels = self.get_keys_from_label_dict(spec)
@@ -446,16 +444,14 @@ class LabelDialog(QtWidgets.QDialog):
 
         super(LabelDialog, self).__init__(parent)
 
-        self.pose_dialog = None
-        self.ui = UILabelDialog(Config.get('labels'), self)
+        self.ui = UILabelDialog(Config.get('labels'), self, parent)
         self.ui.init_ui()
         self._form = None
-        self._annotation = None
+        self._shapes = None
         self._selected_shape = None
         self._boxes = []
         self._bindings = {}
         self._last_label = None
-        self._open_join_dialog = False
 
     @property
     def last_label(self):
@@ -495,35 +491,15 @@ class LabelDialog(QtWidgets.QDialog):
         self.ui.clear_layout_down_to(level)
         self.ui.setup_ui_at_level(level)
 
-    def open_join_dialog(self):
-        """
-        Opens join dialog on button push.
-
-        After join dialog closes, the control doesn't return to this dialog,
-        because # of shapes may have changed.
-        """
-        # Accept and return; after popUp() returns, we'll open this dialog
-        # in label_set() to make use of the returned result.
-        self._form, self._annotation = self.ui.get_full_state()
-        self.accept()
-        self._open_join_dialog = True
-
-    def open_pose_dialog(self):
-        """
-        Opens pose annotation dialog on button push.
-        """
-        self.pose_dialog = PoseAnnotationDialog(self.parent(), self._selected_shape)
-        self.pose_dialog.exec_()
-
     def validate(self):
-        self._form, self._annotation = self.ui.get_full_state()
+        self._form, self._shapes = self.ui.get_full_state()
         if self._form is not None:
             self.accept()
         else:
             QtWidgets.QMessageBox.warning(self, 'Error', 'Label form is not complete')
 
     def popUp(self, selected_shape, text=None, move=True):
-        self._form = self._annotation = None
+        self._form = self._shapes = None
         self._selected_shape = selected_shape
         self.ui.set_to_state(state=selected_shape.form, top_label=text)
         self.ui.focus_on_first_edit()
@@ -531,17 +507,9 @@ class LabelDialog(QtWidgets.QDialog):
             self.move(QtGui.QCursor.pos())
 
         self.exec_()
-        self.pose_dialog = None
         if self._form:
             text = self.ui.get_first_label_from_state(self._form)
             self._last_label = text
+            return text, self._form, self._shapes
         else:
-            # Form can be None when this dialog accept()s to open
-            # Join Shapes dialog, and should be allowed.
-            text = None
-        return text, self._form, self._annotation
-
-    def label_set(self):
-        if self._open_join_dialog:
-            self.parent().join_shapes_dialog.exec_()
-            self._open_join_dialog = False
+            return None, None, None

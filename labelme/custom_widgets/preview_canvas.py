@@ -1,32 +1,74 @@
-from qtpy import QtCore
-from qtpy import QtGui
-from qtpy import QtWidgets
+from qtpy.QtCore import Qt, Signal, QPointF
+from qtpy.QtGui import QPainter
+from qtpy.QtWidgets import QWidget, QApplication
 
-from labelme.shape import Shape
 from labelme.utils import Config
 
+CURSOR_DEFAULT = Qt.ArrowCursor
+CURSOR_POINT = Qt.PointingHandCursor
+CURSOR_GRAB = Qt.OpenHandCursor
 
-class PreviewCanvas(QtWidgets.QWidget):
-    zoomRequest = QtCore.Signal(int, QtCore.QPointF)
-    scrollRequest = QtCore.Signal(int, int)
-    selectionChanged = QtCore.Signal()
-    vertexSelected = QtCore.Signal()
+
+# TODO(unknown):
+# - [maybe] Find optimal epsilon value.
+
+class PreviewCanvas(QWidget):
+    zoomRequest = Signal(int, QPointF)
+    scrollRequest = Signal(int, int)
+    selectionChanged = Signal()
+    vertexSelected = Signal()
+    edgeSelected = Signal(bool)
     min_size, max_size = 400, 1000
 
     def __init__(self, no_highlight=False, *args, **kwargs):
-        self._epsilon = Config.get('epsilon', default=10.0)
         super(PreviewCanvas, self).__init__(*args, **kwargs)
         # Initialise local state.
         self._no_highlight = no_highlight
+        self._image_file = None
+        self._hShape, self._hVertex, self._hEdge = None, None, None
+        self._painter = QPainter()
+        self._cursor = CURSOR_DEFAULT
+        self._imagePos, self.scale = QPointF(), 1.0
+        self._painter = QPainter()
+        # Public state
         self.shapes = []
-        self.selected_shapes = set()  # save the selected shapes here
-        self.hShape, self.hVertex = None, None
-        self._imagePos, self._scale = QtCore.QPointF(), 1.0
-        self._pixmap = QtGui.QPixmap()
-        self._painter = QtGui.QPainter()
+        self.selectedShapes = []
+        self.selectedShapesCopy = []
+        self.visible = {}
         # Set widget options.
         self.setMouseTracking(True)
-        self.setFocusPolicy(QtCore.Qt.WheelFocus)
+        self.setFocusPolicy(Qt.WheelFocus)
+
+    @property
+    def epsilon(self):
+        return Config.get('epsilon', default=10.0)
+
+    @property
+    def pixmap(self):
+        return self._image_file.pixmap if self._image_file else None
+
+    def is_empty(self):
+        return self.pixmap is None
+
+    def has_shapes(self):
+        return bool(self.shapes)
+
+    def enterEvent(self, ev):
+        self.overrideCursor(self._cursor)
+
+    def leaveEvent(self, ev):
+        self.restoreCursor()
+
+    def focusOutEvent(self, ev):
+        self.restoreCursor()
+
+    def unHighlight(self):
+        if self._hShape:
+            self._hShape.highlightClear()
+        self._hVertex = self._hShape = None
+
+    def selectedVertex(self):
+        return self._hVertex is not None
 
     @staticmethod
     def compute_scale(current_scale, w, h):
@@ -39,31 +81,76 @@ class PreviewCanvas(QtWidgets.QWidget):
             return max_scale
         return current_scale
 
-    def set_pixmap(self, pixmap):
-        self._pixmap = pixmap
-        self._scale = self.compute_scale(self._scale, pixmap.width(), pixmap.height())
+    # These two, along with a call to adjustSize are required for the
+    # scroll area.
+    def sizeHint(self):
+        return self.minimumSizeHint()
 
-    @classmethod
-    def from_canvas(cls, canvas, *args, **kwargs):
-        preview_canvas = cls(*args, **kwargs)
-        preview_canvas.shapes = canvas.shapes
-        preview_canvas.set_pixmap(canvas.pixmap)
-        return preview_canvas
+    def minimumSizeHint(self):
+        if self.pixmap:
+            return self.scale * self.pixmap.size()
+        return super().minimumSizeHint()
 
-    def set_selection_signal(self, selection_changed):
-        """
-        Let canvas respond to selection change requests
-        (so as to bind to label lists, etc.)
-        """
-        selection_changed.connect(self.on_selection_requested)
+    def isCanvasVisible(self, shape):
+        return self.visible.get(shape, True)
 
-    def on_selection_requested(self, selected_items):
-        """Handles external change of selection."""
-        self.selected_shapes = selected_items
+    def setShapeVisible(self, shape, value):
+        self.visible[shape] = value
         self.repaint()
 
-    def selectedVertex(self):
-        return self.hVertex is not None
+    def load_image_file(self, image_file, **kwargs):
+        self._image_file = image_file
+        if not Config.get('keep_prev'):
+            self.shapes = []
+        pixmap = image_file.pixmap
+        self.scale = self.compute_scale(self.scale, pixmap.width(), pixmap.height())
+        self.repaint()
+
+    def overrideCursor(self, cursor):
+        self.restoreCursor()
+        self._cursor = cursor
+        QApplication.setOverrideCursor(cursor)
+
+    @staticmethod
+    def restoreCursor():
+        QApplication.restoreOverrideCursor()
+
+    def findHighlight(self, p):
+        for shape in reversed([s for s in self.shapes if self.isCanvasVisible(s)]):
+            # Look for a nearby vertex to highlight. If that fails,
+            # check if we happen to be inside a shape.
+            index = shape.nearestVertex(p, self.epsilon / self.scale)
+            index_edge = shape.nearestEdge(p, self.epsilon / self.scale)
+            if index is not None:
+                if self.selectedVertex():
+                    self._hShape.highlightClear()
+                self._hVertex = index
+                self._hShape = shape
+                self._hEdge = index_edge
+                shape.highlightVertex(index, shape.MOVE_VERTEX)
+                self.overrideCursor(CURSOR_POINT)
+                self.setToolTip("Click & drag to move point")
+                self.setStatusTip(self.toolTip())
+                self.update()
+                break
+            elif shape.containsPoint(p):
+                if self.selectedVertex():
+                    self._hShape.highlightClear()
+                self._hVertex = None
+                self._hShape = shape
+                self._hEdge = index_edge
+                self.setToolTip(
+                    "Click & drag to move shape '%s'" % shape.label)
+                self.setStatusTip(self.toolTip())
+                self.overrideCursor(CURSOR_GRAB)
+                self.update()
+                break
+        else:  # Nothing found, clear highlights, reset state.
+            if self._hShape:
+                self._hShape.highlightClear()
+                self.update()
+            self._hVertex, self._hShape, self._hEdge = None, None, None
+        self.edgeSelected.emit(self._hEdge is not None)
 
     def mouseMoveEvent(self, ev):
         try:
@@ -77,41 +164,20 @@ class PreviewCanvas(QtWidgets.QWidget):
         # - Highlight shapes
         # - Highlight vertex
         # Update shape/vertex fill and tooltip value accordingly.
-        for shape in reversed([s for s in self.shapes]):
-            # Look for a nearby vertex to highlight. If that fails,
-            # check if we happen to be inside a shape.
-            index = shape.nearestVertex(rel_pos, self._epsilon / self._scale)
-            if index is not None:
-                if self.selectedVertex():
-                    self.hShape.highlightClear()
-                self.hVertex = index
-                self.hShape = shape
-                shape.highlightVertex(index, shape.MOVE_VERTEX)
-                self.update()
-                break
-            elif shape.containsPoint(rel_pos):
-                if self.selectedVertex():
-                    self.hShape.highlightClear()
-                self.hVertex = None
-                self.hShape = shape
-                self.setToolTip("Click to select shape '%s'" % shape.label)
-                self.setStatusTip(self.toolTip())
-                self.update()
-                break
-        else:  # Nothing found, clear highlights, reset state.
-            if self.hShape:
-                self.hShape.highlightClear()
-                self.update()
-            self.hVertex, self.hShape = None, None
+        self.setToolTip("Image")
+        self.findHighlight(rel_pos)
 
     def mousePressEvent(self, ev):
-        pos = self.transformPos(ev.localPos())
+        try:
+            pos = self.transformPos(ev.localPos())
+        except AttributeError:
+            return
         # Transform pointer location by image offset
         pos -= self._imagePos
-        if ev.button() == QtCore.Qt.LeftButton:
-            group_mode = (int(ev.modifiers()) == QtCore.Qt.ControlModifier)
+        if ev.button() == Qt.LeftButton:
+            group_mode = (int(ev.modifiers()) == Qt.ControlModifier)
             if self.selectedVertex():  # A vertex is marked for selection.
-                index, shape = self.hVertex, self.hShape
+                index, shape = self._hVertex, self._hShape
                 shape.highlightVertex(index, shape.MOVE_VERTEX)
                 self.vertexSelected.emit()
             self.select_shape(pos, multiple_selection_mode=group_mode)
@@ -123,91 +189,79 @@ class PreviewCanvas(QtWidgets.QWidget):
             if not shape.containsPoint(point):
                 continue
             if multiple_selection_mode:
-                if shape not in self.selected_shapes:
-                    self.selected_shapes.add(shape)
+                if shape not in self.selectedShapes:
+                    self.selectedShapes.append(shape)
                     self.selectionChanged.emit()
             else:
-                self.selected_shapes = {shape}
+                self.selectedShapes = [shape]
                 self.selectionChanged.emit()
             return
         # If clicked on nothing, deselect all.
         self.deSelectShape()
 
     def deSelectShape(self):
-        if self.selected_shapes:
-            self.selected_shapes = set()
+        if self.selectedShapes:
+            self.selectedShapes = []
             self.selectionChanged.emit()
             self.update()
 
     def paintEvent(self, event):
-        if not self._pixmap:
+        if not self.pixmap:
             return super(PreviewCanvas, self).paintEvent(event)
 
         p = self._painter
         p.begin(self)
-        p.setRenderHint(QtGui.QPainter.Antialiasing)
-        p.setRenderHint(QtGui.QPainter.HighQualityAntialiasing)
-        p.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.HighQualityAntialiasing)
+        p.setRenderHint(QPainter.SmoothPixmapTransform)
 
-        p.scale(self._scale, self._scale)
+        p.scale(self.scale, self.scale)
         p.translate(self.offsetToCenter())
-        p.drawPixmap(self._imagePos, self._pixmap)
+        p.drawPixmap(self._imagePos, self.pixmap)
         # Translate by image position for all shapes
         # so that they move along
         p.translate(self._imagePos)
-        Shape.scale = self._scale
+        selected_shapes_set = set(self.selectedShapes)
         for shape in self.shapes:
-            fill = (not self._no_highlight and (
-                    shape in self.selected_shapes or shape == self.hShape
-            ))
-            shape.paint(p, fill=fill)
+            selected = shape in selected_shapes_set
+            if self.isCanvasVisible(shape):
+                shape.paint(
+                    p, fill=(selected or shape == self._hShape), canvas=self
+                )
         p.end()
 
     def transformPos(self, point):
         """Convert from widget-logical coordinates to painter-logical ones."""
-        return point / self._scale - self.offsetToCenter()
+        return point / self.scale - self.offsetToCenter()
 
     def offsetToCenter(self):
-        s = self._scale
+        s = self.scale
         area = super(PreviewCanvas, self).size()
-        w, h = self._pixmap.width() * s, self._pixmap.height() * s
+        w, h = self.pixmap.width() * s, self.pixmap.height() * s
         aw, ah = area.width(), area.height()
         x = (aw - w) / (2 * s) if aw > w else 0
         y = (ah - h) / (2 * s) if ah > h else 0
-        return QtCore.QPointF(x, y)
+        return QPointF(x, y)
 
-    # These two, along with a call to adjustSize are required for the
-    # scroll area.
-    def sizeHint(self):
-        return self.minimumSizeHint()
-
-    def minimumSizeHint(self):
-        if self._pixmap:
-            return self._scale * self._pixmap.size()
-        return super(PreviewCanvas, self).minimumSizeHint()
+    def outOfPixmap(self, p):
+        w, h = self.pixmap.width(), self.pixmap.height()
+        return not (0 <= p.x() <= w and 0 <= p.y() <= h)
 
     def wheelEvent(self, ev):
         mods = ev.modifiers()
         delta = ev.angleDelta()
-        if QtCore.Qt.ControlModifier == int(mods):
+        if Qt.ControlModifier == int(mods):
             # with Ctrl/Command key
             # zoom
             self.zoomRequest.emit(delta.y(), ev.pos())
         else:
             # scroll
-            self.scrollRequest.emit(delta.x(), QtCore.Qt.Horizontal)
-            self.scrollRequest.emit(delta.y(), QtCore.Qt.Vertical)
+            self.scrollRequest.emit(delta.x(), Qt.Horizontal)
+            self.scrollRequest.emit(delta.y(), Qt.Vertical)
         ev.accept()
 
-    def replace_and_focus_shape(self, shape: Shape, padding: float = 40.0):
-        shape_rect = shape.boundingRect()
-        scale = self.compute_scale(self._scale, shape_rect.width(), shape_rect.height())
-        pd = padding / scale
-        shape_rect = shape_rect.adjusted(-pd, -pd, pd, pd)
-        rect_int = QtCore.QRect(*shape_rect.getRect())
-        self.set_pixmap(self._pixmap.copy(rect_int))
-        shape = shape.copy()
-        shape.moveBy(-rect_int.topLeft())
-        self.shapes = [shape]
-        self.repaint()
-        return shape
+    def loadShapes(self, shapes, replace=True):
+        if replace:
+            self.shapes = list(shapes)
+        else:
+            self.shapes.extend(shapes)
