@@ -448,11 +448,11 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.mayContinue():
             return
 
-        currIndex = self.imageList.index(str(item.text()))
+        currIndex = self.relImageList.index(str(item.text()))
         if currIndex < len(self.imageList):
             filename = self.imageList[currIndex]
             if filename:
-                self.loadFile(self.get_abs_filepath(filename))
+                self.loadFile(filename)
 
     # React to canvas signals.
     def shapeSelectionChanged(self):
@@ -808,7 +808,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 filename = self.imageList[currIndex + 1]
             else:
                 filename = self.imageList[-1]
-        self.filename = self.get_abs_filepath(filename)
+        self.filename = filename
 
         if self.filename and load:
             self.loadFile(self.filename)
@@ -1071,6 +1071,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @property
     def imageList(self):
+        lst = []
+        for i in range(self.ui.fileListWidget.count()):
+            item = self.ui.fileListWidget.item(i)
+            lst.append(self.get_abs_filepath(item.text()))
+        return lst
+
+    @property
+    def relImageList(self):
         lst = []
         for i in range(self.ui.fileListWidget.count()):
             item = self.ui.fileListWidget.item(i)
