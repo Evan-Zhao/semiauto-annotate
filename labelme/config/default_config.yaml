@@ -53,7 +53,13 @@ labels:
     double white: null
     crossing: null
 
-point_labels: [右肩, 右肘, 右腕, 左肩, 左肘, 左腕, 右髋, 右膝, 右踝, 左髋, 左膝, 左踝, 头顶, 脖子]
+point_labels: [
+  R-Sho, R-Elb, R-Wr,
+  L-Sho, L-Elb, L-Wr,
+  R-Hip, R-Knee, R-Ank,
+  L-Hip, L-Knee, L-Ank,
+  Nose, Neck
+]
 
 label_color:
   bike: 0x80FFB300 # Vivid Yellow

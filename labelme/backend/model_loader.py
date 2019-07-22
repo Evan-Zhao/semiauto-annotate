@@ -36,8 +36,9 @@ class ModelLoader(object):
         t1 = time()
         print(f'Yolo inference in {t1 - t0} secs')
         try:
+            point_labels = Config.get('point_labels')
             pose_estm_json = self.pose_detection.infer_on_image(image_file)
-            pose_estm = PoseEstmParser(pose_estm_json)
+            pose_estm = PoseEstmParser(pose_estm_json, accepted_label=point_labels)
             results.extend(pose_estm.data)
         except Exception as e:
             print(e)

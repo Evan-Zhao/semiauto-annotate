@@ -6,16 +6,27 @@ from labelme.shape import Shape, PoseShape
 class PoseEstmParser(object):
     n_pose_points = 18
     body_chains = [
-        [1, 8, 9, 10],
-        [4, 3, 2, 16, 14, 0, 15, 17, 5, 6, 7],
-        [13, 12, 11]
+        [1, 2, 3, 4], [1, 5, 6, 7],
+        [1, 8, 9, 10], [1, 11, 12, 13], [1, 0]
+    ]
+    keypoints_mapping = [
+        'Nose', 'Neck',
+        'R-Sho', 'R-Elb', 'R-Wr',
+        'L-Sho', 'L-Elb', 'L-Wr',
+        'R-Hip', 'R-Knee', 'R-Ank',
+        'L-Hip', 'L-Knee', 'L-Ank',
+        'R-Eye', 'L-Eye', 'R-Ear', 'L-Ear'
     ]
     shape_label = 'person'
     shape_form = [['person', None, None, None]]
     shape_type = 'linestrip'
 
-    def __init__(self, json_data):
+    def __init__(self, json_data, accepted_label=None):
         self.data = None
+        if accepted_label:
+            self.accepted_label = {l: i for i, l in enumerate(accepted_label)}
+        else:
+            self.accepted_label = None
         if json_data is not None:
             self.load(json_data)
 
@@ -30,6 +41,12 @@ class PoseEstmParser(object):
         if not condition:
             raise ValueError(msg)
 
+    def translate_label(self, i):
+        if not self.accepted_label:
+            return i
+        name = self.keypoints_mapping[i]
+        return self.accepted_label.get(name, None)
+
     def validate_and_parse(self, loaded):
         ret = []
         self.assert_and_raise(type(loaded) is list)
@@ -42,7 +59,11 @@ class PoseEstmParser(object):
                     pose_parsed.append(None)
                     continue
                 self.assert_and_raise(type(p) is list and len(p) == 2)
-                pose_parsed.append((QPointF(*p), i))
+                translated_i = self.translate_label(i)
+                if translated_i is None:
+                    print(f'Dropped point of label {self.keypoints_mapping[i]}')
+                else:
+                    pose_parsed.append((QPointF(*p), translated_i))
             ret.append(pose_parsed)
         return ret
 
