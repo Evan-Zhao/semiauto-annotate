@@ -10,6 +10,8 @@ from .yolo_parser import YoloParser
 
 
 class ModelLoader(object):
+    exit_request = False
+
     def __init__(self, on_inited):
         t0 = time()
         self.pose_detection = PoseDetection()
@@ -19,7 +21,7 @@ class ModelLoader(object):
         print(f'Yolo loaded in {time() - t1} secs')
         self.task_queue = Queue()
         on_inited(True, self)
-        while True:
+        while not self.exit_request:
             image_file, on_completion = self.task_queue.get()
             self._infer(image_file, on_completion)
 

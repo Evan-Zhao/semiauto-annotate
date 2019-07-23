@@ -178,7 +178,10 @@ def main():
 
     win.show()
     win.raise_()
-    sys.exit(app.exec_())
+    status_code = app.exec_()
+    from labelme.backend import ModelLoader
+    ModelLoader.exit_request = True
+    sys.exit(status_code)
 
 
 # this main block is required to generate executable by pyinstaller
