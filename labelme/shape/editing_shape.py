@@ -14,6 +14,8 @@ def fit_bezier(points):
     from scipy.interpolate import splprep, BSpline
     from itertools import groupby
 
+    if len(points) < 3:
+        return None
     coords = np.array([(p.x(), p.y()) for p in points]).transpose()
     ((t, c, k), _), _, _, _ = splprep(coords, full_output=True)
     c = np.array(c).transpose()

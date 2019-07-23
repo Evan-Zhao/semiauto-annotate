@@ -1,5 +1,5 @@
 from threading import Thread
-from queue import Queue
+from queue import Queue, Empty
 from time import time
 
 from labelme.utils import Config
@@ -22,8 +22,11 @@ class ModelLoader(object):
         self.task_queue = Queue()
         on_inited(True, self)
         while not self.exit_request:
-            image_file, on_completion = self.task_queue.get()
-            self._infer(image_file, on_completion)
+            try:
+                image_file, on_completion = self.task_queue.get(timeout=1.0)
+                self._infer(image_file, on_completion)
+            except Empty:
+                pass
 
     def _infer(self, image_file, on_completion):
         results = []

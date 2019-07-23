@@ -1161,12 +1161,12 @@ class MainWindow(QtWidgets.QMainWindow):
         openNextImg = action(
             '&Next Image', self.openNextImg, shortcuts['open_next'],
             'next', u'Open next (hold Ctl+Shift to copy labels)',
-            enable_condition=lambda: bool(self.imageList) and self.mayContinue()
+            enable_condition=lambda: bool(self.imageList)
         )
         openPrevImg = action(
             '&Prev Image', self.openPrevImg, shortcuts['open_prev'],
             'prev', u'Open prev (hold Ctl+Shift to copy labels)',
-            enable_condition=lambda: bool(self.imageList) and self.mayContinue()
+            enable_condition=lambda: bool(self.imageList)
         )
         save = action(
             '&Save', self.saveFile, shortcuts['save'], 'save',

@@ -451,7 +451,10 @@ class Canvas(PreviewCanvas):
 
     def finalise(self):
         assert self._current
-        self.shapes.append(self._current.to_immutable_point())
+        result = self._current.to_immutable_point()
+        if not result:
+            return
+        self.shapes.append(result)
         self.storeShapes()
         self._current = None
         self.repaint()
