@@ -214,6 +214,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.imagePath = None
         self.maxRecent = 7
 
+        self.ui = UIMainWindow()
+        self.ui.setup_ui(self)
+
         self.zoomMode = self.FIT_WINDOW
         self.scalers = {
             self.FIT_WINDOW: self.scaleFitWindow,
@@ -253,8 +256,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.filename is not None:
             self.queueEvent(functools.partial(self.loadFile, self.filename))
 
-        self.ui = UIMainWindow()
-        self.ui.setup_ui(self)
         self.menus = self.ui.menus
         self.canvas = self.ui.canvas
         self.labelList = self.ui.labelList
@@ -905,7 +906,7 @@ class MainWindow(QtWidgets.QMainWindow):
         filename = dlg.getSaveFileName(
             self, 'Choose File', default_labelfile_name,
             'Label files (*%s)' % LabelFile.suffix)
-        filename = str(filename)
+        filename = str(filename[0])
         return filename
 
     def _saveFile(self, filename):
