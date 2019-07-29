@@ -2,10 +2,9 @@
 
 Major design experience (MDE) project, sponsored by HJ Drive.
 
-## Project Specification
+## Model Files
 
-See [spec document](logistics/specs_ver0_0.pdf). Subject to changes.
+Currently pretrained model data are hosted [here](https://drive.google.com/drive/folders/1c9ahNzMl5XgUUxWgeBZyyv2d5eXF0tcF?usp=sharing), which contains 2 `.h5` files.
 
-## Project Timeline
-
-See page 12, [design review slides](logistics/design_review_1.pptx).
+Download these files, then move file `pose_iter_440000.h5` into `pose_estm/model` and `yolo.h5`
+into `yolo/model_data`.
