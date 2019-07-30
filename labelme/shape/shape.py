@@ -6,7 +6,7 @@ from qtpy.QtGui import QPainterPath, QPen, QColor
 
 import labelme.utils
 from labelme.utils import Config
-from labelme.app import Application
+from labelme.application import Application
 from .bezier import BezierB
 
 # TODO(unknown):

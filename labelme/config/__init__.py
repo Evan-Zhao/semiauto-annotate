@@ -3,9 +3,6 @@ import shutil
 
 import yaml
 
-from labelme.logger import logger
-
-
 here = osp.dirname(osp.abspath(__file__))
 
 
@@ -14,8 +11,8 @@ def update_dict(target_dict, new_dict, validate_item=None):
         if validate_item:
             validate_item(key, value)
         if key not in target_dict:
-            logger.warn('Skipping unexpected key in config: {}'
-                        .format(key))
+            print('Skipping unexpected key in config: {}'
+                  .format(key))
             continue
         if isinstance(target_dict[key], dict) and \
                 isinstance(value, dict):
@@ -38,7 +35,7 @@ def get_default_config():
         try:
             shutil.copy(config_file, user_config_file)
         except Exception:
-            logger.warn('Failed to save config: {}'.format(user_config_file))
+            print('Failed to save config: {}'.format(user_config_file))
 
     return config
 
@@ -47,7 +44,7 @@ def validate_config_item(key, value):
     if key == 'validate_label' and value not in [None, 'exact', 'instance']:
         raise ValueError(
             "Unexpected value for config key 'validate_label': {}"
-            .format(value)
+                .format(value)
         )
     if key == 'labels' and value is not None and len(value) != len(set(value)):
         raise ValueError(
