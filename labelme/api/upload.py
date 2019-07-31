@@ -26,5 +26,7 @@ def upload(img_id):
         file.save(os.path.join(labelme.config.UPLOAD_PATH, filename))
         labelme.model.modify_collection_row(img_id, 'in_use', False)
         labelme.model.modify_collection_row(img_id, 'complete', True)
+        labelme.model.modify_collection_row(img_id, 'complete_result',
+                                            os.path.join(labelme.config.UPLOAD_PATH, filename))
         return '', 200
     return '', 400

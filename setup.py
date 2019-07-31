@@ -43,7 +43,7 @@ install_requires = [
     'Flask-Testing',
     'selenium',
     'requests',
-    'arrow'
+    'arrow',
     'pymongo'
 ]
 

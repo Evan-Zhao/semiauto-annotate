@@ -9,6 +9,7 @@ def get_preprocessed():
     """
     if flask.request.method == 'GET':
         img_id, [yolo_result, pose_estm_result] = labelme.model.get_incomplete_img()
+        labelme.model.modify_collection_row(img_id, 'in_use', True)
         content = {'image_id': img_id,
                    "yolo_result": yolo_result,
                    "pose_estm_result": pose_estm_result}

@@ -1,5 +1,5 @@
 from threading import Thread
-from queue import Queue, Empty
+from queue import Queue, Empty, PriorityQueue
 from time import time
 
 from labelme.utils import Config
@@ -12,6 +12,7 @@ from .yolo_parser import YoloParser
 
 class ModelLoader(object):
     exit_request = False
+    task_queue = PriorityQueue()
 
     def __init__(self):
         t0 = time()
@@ -20,22 +21,25 @@ class ModelLoader(object):
         print(f'Pose detection loaded in {t1 - t0} secs')
         self.yolo = YOLO()
         print(f'Yolo loaded in {time() - t1} secs')
-        self.task_queue = Queue()
 
         results = labelme.model.get_unpreprocessed_img()
         for result in results:
             image_path = result['filename']
             img_id = result['id']
-            self.task_queue.put((image_path, img_id, labelme.model.on_infer_complete))
+            ModelLoader.task_queue.put((10, (image_path, img_id, labelme.model.on_infer_complete)))
 
         while not self.exit_request:
             try:
-                image_file, img_id, on_completion = self.task_queue.get(timeout=1.0)
+                image_file, img_id, on_completion = ModelLoader.task_queue.get(timeout=1.0)
                 self._infer(image_file, img_id, on_completion)
             except Empty:
                 pass
 
     def _infer(self, image_file, img_id, on_completion):
+        if labelme.model.get_collection_value(img_id, 'preprocessed'):
+            print("Already infered")
+            return
+
         print("Start Inference")
         results = []
         t0 = time()
@@ -62,6 +66,10 @@ class ModelLoader(object):
     def main_thread_ctor(cls):
         load_thread = Thread(target=cls)
         load_thread.start()
+
+    @classmethod
+    def add_prior_task(cls, task):
+        ModelLoader.task_queue.put((1, task))
 
     '''
     def main_thread_infer(self, image_path, on_completion):

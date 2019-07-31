@@ -1,7 +1,27 @@
 import json
 import os
 import labelme
+from labelme import ModelLoader
 from labelme.conf import PREPROCESSED_YOLO_RESULT_PATH, PREPROCESSED_POSE_ESTM_RESULT_PATH
+
+
+def get_image_list():
+    result = labelme.mongodb_collection.find({}, {'filename': 1})
+    for i in range(len(result)):
+        filename = result[i]['filename']
+        filename = str.split(filename, '/')
+        filename = str.split(filename[len(filename) - 1], '.')[0]
+        result[i] = filename
+    return result
+
+def add_prior_preprocess_task(img_id):
+    result = labelme.mongodb_collection.find_one({'id': img_id})
+    ModelLoader.add_prior_task([result['filename'], img_id, on_infer_complete()])
+
+
+def get_collection_value(img_id, column):
+    result = labelme.mongodb_collection.find_one({'id': img_id}, {column: 1})
+    return result[column]
 
 
 def get_image_path(img_id):
@@ -56,10 +76,14 @@ def get_incomplete_img():
                                                           [{'complete': False},
                                                            {'in_use': False},
                                                            {'preprocessed': True}]})
-    with open(result['preprocess_pose_estm'], 'r') as fp1:
+    return result['id'], get_preprocessed_result(result['preprocess_yolo'], result['preprocess_pose_estm'])
+
+
+def get_preprocessed_result(preprocess_yolo_path, preprocess_pose_estm_path):
+    with open(preprocess_pose_estm_path, 'r') as fp1:
         pose_estm = json.load(fp1)
     fp1.close()
-    with open(result['preprocess_yolo'], 'r') as fp2:
+    with open(preprocess_yolo_path, 'r') as fp2:
         yolo = json.load(fp2)
     fp2.close()
-    return result['id'], [yolo, pose_estm]
+    return [yolo, pose_estm]
