@@ -1,6 +1,6 @@
 from qtpy.QtGui import QColor, QFont, QPen, QPainterPath
 
-from labelme.app import Application
+from labelme.application import Application
 from .shape import Shape, DEFAULT_LINE_COLOR
 
 TEXT_COLOR = QColor(0, 255, 0, 128)

@@ -32,7 +32,19 @@ install_requires = [
     'sip',
     'pyqt5>=5.12',
     'opencv-python',
-    'IPython'
+    'IPython',
+    'flask',
+    'html5validator',
+    'pycodestyle',
+    'pydocstyle',
+    'pylint',
+    'nodeenv',
+    'sh',
+    'Flask-Testing',
+    'selenium',
+    'requests',
+    'arrow',
+    'pymongo'
 ]
 
 if sys.argv[1] == 'release':

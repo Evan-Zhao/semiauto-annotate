@@ -116,7 +116,7 @@ class EditingShape(Shape):
         self.points.insert(i, point)
 
     def paint(self, painter, fill=False, canvas=None):
-        from labelme.app import Application
+        from labelme.application import Application
 
         mainwindow = Application.get_main_window()
         line_pen, last_line_pen, fill_color = self._get_pens_and_colors(
