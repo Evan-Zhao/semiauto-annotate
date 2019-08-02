@@ -10,7 +10,7 @@ import sys
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-version_file = os.path.join(here, 'labelme', '_version.py')
+version_file = os.path.join(here, 'labelme_client', '_version.py')
 
 version = importlib.machinery.SourceFileLoader(
     '_version', version_file
@@ -59,7 +59,7 @@ if sys.argv[1] == 'release':
         'git tag v{:s}'.format(version),
         'git push origin master --tag',
         'python setup.py sdist',
-        'twine upload dist/labelme-{:s}.tar.gz'.format(version),
+        'twine upload dist/labelme_client-{:s}.tar.gz'.format(version),
     ]
     for cmd in commands:
         subprocess.check_call(shlex.split(cmd))
@@ -72,7 +72,7 @@ def get_long_description():
     try:
         import github2pypi
         return github2pypi.replace_url(
-            slug='wkentaro/labelme', content=long_description
+            slug='wkentaro/labelme_client', content=long_description
         )
     except Exception:
         return long_description
@@ -102,17 +102,17 @@ setup(
         'Programming Language :: Python :: Implementation :: PyPy',
     ],
     package_data={
-        'labelme': ['icons/*', 'config/*.yaml'],
+        'labelme_client': ['icons/*', 'config/*.yaml'],
         'pose_estm': ['model/*', 'config'],
         'yolo': ['model_data/*']
     },
     entry_points={
         'console_scripts': [
-            'labelme=labelme.main:main',
-            'labelme_draw_json=labelme.cli.draw_json:main',
-            'labelme_draw_label_png=labelme.cli.draw_label_png:main',
-            'labelme_json_to_dataset=labelme.cli.json_to_dataset:main',
-            'labelme_on_docker=labelme.cli.on_docker:main',
+            'labelme_client=labelme_client.main:main',
+            'labelme_draw_json=labelme_client.cli.draw_json:main',
+            'labelme_draw_label_png=labelme_client.cli.draw_label_png:main',
+            'labelme_json_to_dataset=labelme_client.cli.json_to_dataset:main',
+            'labelme_on_docker=labelme_client.cli.on_docker:main',
             'pose_estm=pose_estm.pose_detection:main',
             'yolo=yolo.yolo_video:main'
         ],

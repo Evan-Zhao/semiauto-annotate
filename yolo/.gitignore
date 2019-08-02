@@ -1,3 +1,4 @@
 # Dataset files
 traffic_sign/traffic-signs-data
 traffic_sign/models
+*.h5

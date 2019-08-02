@@ -1,0 +1,153 @@
+auto_save: false
+display_label_popup: true
+instance_label_auto_increment: true
+store_data: true
+keep_prev: false
+logger_level: info
+
+label_flags:
+  occluded: bool
+  truncated: bool
+  visibility: [visible, occluded, outside-of-image]
+  directions: [horizontal, vertical]
+  line: [dotted, solid]
+  limit: int
+  points: canvas
+
+labels:
+  __flags: [occluded, truncated]
+  bicycle: null
+  bus: null
+  car: null
+  motorbike: null
+  train: null
+  truck: null
+  rider: null
+  person: points
+  traffic light:
+    red: null
+    yellow: null
+    blue: null
+    unknown: null
+  traffic sign:
+    speed limit: [limit]
+    end speed limit: null
+    stop: null
+    no entry: null
+    right turn: null
+    left turn: null
+    keep straight: null
+    keep left: null
+    keep right: null
+    traffic cone: null
+    other sign: null
+  driveway(可行驶区域):
+    current: null
+    alternative: null
+  lane:
+    __flags: [directions, line]
+    curb: null
+    single yellow: null
+    double yellow: null
+    single white: null
+    double white: null
+    crossing: null
+
+point_labels: [
+  Nose, Neck,
+  R-Sho, R-Elb, R-Wr,
+  L-Sho, L-Elb, L-Wr,
+  R-Hip, R-Knee, R-Ank,
+  L-Hip, L-Knee, L-Ank,
+  R-Eye, L-Eye, R-Ear, L-Ear
+]
+
+label_color:
+  bike: 0x80FFB300 # Vivid Yellow
+  bus: 0x80803E75 # Strong Purple
+  car: 0x80FF6800 # Vivid Orange
+  motor: 0x80A6BDD7 # Very Light Blue
+  train: 0x80C10020 # Vivid Red
+  truck: 0x80CEA262 # Grayish Yellow
+  rider: 0x80817066 # Medium Gray
+  person: 0x80007D34 # Vivid Green
+  traffic light: 0x80F6768E # Strong Purplish Pink
+  traffic sign: 0x8000538A # Strong Blue
+  driveway(可行驶区域): 0x80FF7A5C # Strong Yellowish Pink
+  lane: 0x8053377A # Strong Violet
+
+file_search: null
+sort_labels: true
+validate_label: null
+
+# main
+flag_dock:
+  show: true
+  closable: true
+  movable: true
+  floatable: true
+label_dock:
+  show: true
+  closable: true
+  movable: true
+  floatable: true
+shape_dock:
+  show: true
+  closable: true
+  movable: true
+  floatable: true
+file_dock:
+  show: true
+  closable: true
+  movable: true
+  floatable: true
+
+# label_dialog
+show_label_text_field: true
+label_completion: startswith
+fit_to_content:
+  column: true
+  row: true
+
+epsilon: 10.0
+
+shortcuts:
+  close: Ctrl+W
+  open: Ctrl+O
+  open_dir: Ctrl+U
+  quit: Ctrl+Q
+  save: Ctrl+S
+  save_as: Ctrl+Shift+S
+  save_to: null
+  delete_file: Ctrl+Delete
+
+  open_next: [D, Ctrl+Shift+D]
+  open_prev: [A, Ctrl+Shift+A]
+
+  zoom_in: [Ctrl++, Ctrl+=]
+  zoom_out: Ctrl+-
+  zoom_to_original: Ctrl+0
+  fit_window: Ctrl+F
+  fit_width: Ctrl+Shift+F
+
+  add_point: Ctrl+Shift+P
+  create_polygon: Ctrl+N
+  create_rectangle: Ctrl+R
+  create_circle: null
+  create_line: null
+  create_point: null
+  create_linestrip: null
+  create_curve: null
+  create_freeform: null
+  edit_polygon: Esc
+  invert_selection: Ctrl+I
+  select_all: Ctrl+A
+  delete_polygon: Delete
+  copy: Ctrl+C
+  paste: Ctrl+V
+  undo: Ctrl+Z
+  undo_last_point: [Ctrl+Z, Backspace]
+  edit_label: Ctrl+E
+  edit_line_color: Ctrl+L
+  edit_fill_color: Ctrl+Shift+L
+  toggle_keep_prev_mode: Ctrl+P
