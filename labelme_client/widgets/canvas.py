@@ -555,7 +555,8 @@ class Canvas(PreviewCanvas):
         self._current = None
         self.repaint()
 
-    def resetState(self):
+    def clear_all(self):
+        self._image_file = None
         self.restoreCursor()
         self.shapesBackups = []
         self.selectedShapes = []

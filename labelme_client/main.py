@@ -168,9 +168,9 @@ def main():
     app.setApplicationName(__appname__)
     app.setWindowIcon(newIcon('icon'))
     win = MainWindow(
-        filename=filename,
+        file_or_folder=filename,
         output_file=output_file,
-        output_dir=output_dir,
+        output_dir=output_dir
     )
     app.set_main_window(win)
 

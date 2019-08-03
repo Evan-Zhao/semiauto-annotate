@@ -23,9 +23,6 @@ class LabelQListWidget(QtWidgets.QListWidget):
         super(LabelQListWidget, self).clear()
         self.itemsToShapes = []
 
-    def setParent(self, parent):
-        self.parent = parent
-
     def dropEvent(self, event):
         shapes = self.shapes
         super(LabelQListWidget, self).dropEvent(event)
@@ -33,7 +30,7 @@ class LabelQListWidget(QtWidgets.QListWidget):
             return
         if self.canvas is None:
             raise RuntimeError('self.canvas must be set beforehand.')
-        self.parent.setDirty()
+        self.parent().setDirty()
         self.canvas.loadShapes(self.shapes)
 
     def invertSelection(self):
