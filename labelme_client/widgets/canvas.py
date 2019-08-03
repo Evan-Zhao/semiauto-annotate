@@ -8,6 +8,7 @@ from labelme_base.shape import Shape, PoseShape
 from labelme_base.utils import distance
 from ..custom_widgets import PreviewCanvas, LoadingDialog
 from ..shape import EditingShape
+from ..utils import ImageFile
 
 CURSOR_DEFAULT = Qt.ArrowCursor
 CURSOR_POINT = Qt.PointingHandCursor
@@ -72,15 +73,37 @@ class Canvas(PreviewCanvas):
 
     @property
     def snapshot(self):
+        shape_snapshots = []
+        for s in self.shapes:
+            if type(s) is Shape:
+                shape_snapshots.append(('shape', s.__getstate__()))
+            elif type(s) is PoseShape:
+                shape_snapshots.append(('pose_shape', s.__getstate__()))
+            else:
+                assert False
         return {
-            'shapes': self.shapes,
-            'image_file': self._image_file
+            'shapes': shape_snapshots,
+            'image_file': self._image_file.__getstate__()
         }
 
-    def load_snapshot(self, value):
+    @snapshot.setter
+    def snapshot(self, value):
+        shapes = []
+        for tp, state in value['shapes']:
+            if tp == 'shape':
+                s = Shape.__new__(Shape)
+                s.__setstate__(state)
+            elif tp == 'pose_shape':
+                s = PoseShape.__new__(PoseShape)
+                s.__setstate__(state)
+            else:
+                assert False
+            shapes.append(s)
+        image_file = ImageFile.__new__(ImageFile)
+        image_file.__setstate__(value['image_file'])
         # Loading image clears all shapes, so it goes first.
-        self.load_image_file(value['image_file'], load_model_hint=False)
-        self.loadShapes(value['shapes'])
+        self.load_image_file(image_file)
+        self.loadShapes(shapes)
 
     def storeShapes(self):
         from copy import deepcopy

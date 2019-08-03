@@ -1,3 +1,4 @@
+from qtpy.QtCore import QPointF
 from qtpy.QtGui import QColor, QFont, QPen, QPainterPath
 
 from .shape import Shape, DEFAULT_LINE_COLOR
@@ -97,8 +98,14 @@ class PoseShape(Shape):
 
     def __getstate__(self):
         return dict(
-            maybe_points=self.maybe_points
+            maybe_points=[
+                (p.x(), p.y()) if p else None
+                for p in self.maybe_points
+            ]
         )
 
     def __setstate__(self, state):
-        self.__init__(state['maybe_points'])
+        self.__init__([
+            QPointF(*xy) if xy else None
+            for xy in state['maybe_points']
+        ])

@@ -1,6 +1,6 @@
 import os.path as osp
 
-import jsonpickle
+import json
 from qtpy import QtCore
 
 from . import img_b64_to_arr
@@ -15,7 +15,6 @@ class LabelFile(object):
     suffix = '.json'
 
     def __init__(self, filename=None):
-        jsonpickle.set_encoder_options('json', ensure_ascii=False, indent=2)
         self.main_snapshot = None
         if filename is not None:
             self.load(filename)
@@ -26,7 +25,7 @@ class LabelFile(object):
             raise LabelFileError()
         try:
             with open(filename, 'r') as f:
-                data = jsonpickle.decode(f.read())
+                data = json.load(f)
         except Exception as e:
             raise LabelFileError(e)
         self.filename = filename
@@ -45,7 +44,7 @@ class LabelFile(object):
                 'data': main_snapshot
             }
             with open(filename, 'w') as f:
-                f.write(jsonpickle.encode(data))
+                json.dump(data, f)
         except Exception as e:
             raise LabelFileError(e)
 

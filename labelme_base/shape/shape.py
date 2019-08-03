@@ -1,7 +1,7 @@
 import copy
 import math
 
-from qtpy.QtCore import QRectF
+from qtpy.QtCore import QRectF, QPointF
 from qtpy.QtGui import QPainterPath, QPen, QColor
 
 from .bezier import BezierB
@@ -197,13 +197,14 @@ class Shape(object):
 
     def __getstate__(self):
         return dict(
-            points=self.points,
+            points=[(p.x(), p.y()) for p in self.points],
             shape_type=self.shape_type,
             form=self.form
         )
 
     def __setstate__(self, state):
-        self.__init__(state['points'], state['form'], state['shape_type'])
+        points = [QPointF(x, y) for x, y in state['points']]
+        self.__init__(points, state['form'], state['shape_type'])
 
     def __len__(self):
         return len(self.points)

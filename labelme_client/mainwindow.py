@@ -618,7 +618,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 print_file_error(e, filename)
                 return False
             self.label_file = label_file
-            self.load_snapshot(label_file.main_snapshot)
+            self.snapshot = label_file.main_snapshot
         else:
             try:
                 image_file = ImageFile(filename)
@@ -928,17 +928,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     @property
     def snapshot(self):
-        ret = {
-            'canvas': self.canvas.snapshot,
-            'lineColor': self.lineColor,
-            'fillColor': self.fillColor
-        }
-        return ret
+        return self.canvas.snapshot
 
-    def load_snapshot(self, value):
-        self.canvas.load_snapshot(value['canvas'])
-        self.lineColor = value['lineColor']
-        self.fillColor = value['fillColor']
+    @snapshot.setter
+    def snapshot(self, value):
+        self.canvas.snapshot = value
         self.loadShapes(self.canvas.shapes)
 
     def populate_actions(self):
