@@ -98,6 +98,9 @@ class URI(QObject):
         self.file_list[self.idx_of_list] = \
             osp.relpath(saved_to_abs, self.name), True
 
+    def output_dir_changed(self, output_dir):
+        self.file_list = find_dir_images(self.name, output_dir)
+
     def __getitem__(self, item):
         if self.is_file_like:
             return self.name

@@ -11,7 +11,6 @@ class FileQListWidget(QListWidget):
         super().__init__(*args, **kwargs)
         uri_signal.connect(self.handle_update)
         self.itemSelectionChanged.connect(self.file_selection_changed)
-        self.currentItemChanged.connect(self.file_selection_changed)
         self.get_uri = get_uri
 
     def is_empty(self):
@@ -40,9 +39,6 @@ class FileQListWidget(QListWidget):
             # This does not trigger itemSelectionChanged
             self.clearSelection()
             self.file_selection_changed()
-        filename = uri[0]
-        if filename:
-            self.load_file_signal.emit(filename)
 
     def file_selection_changed(self):
         r = self.currentRow()
@@ -77,6 +73,14 @@ class FileQListWidget(QListWidget):
         self.uri.filter(self.sender().text())
         self.make_items(self.uri.file_list)
 
+    def output_dir_changed(self, output_dir):
+        r = self.currentRow()
+        self.uri.output_dir_changed(output_dir)
+        self.make_items(self.uri.file_list)
+        self.setCurrentRow(r)
+
     def set_current_file_saved(self, saved_to_abs):
+        self.itemSelectionChanged.disconnect()
         self.uri.set_current_file_saved(saved_to_abs)
         self.make_items(self.uri.file_list)
+        self.itemSelectionChanged.connect(self.file_selection_changed)

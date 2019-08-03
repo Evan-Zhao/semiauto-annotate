@@ -198,7 +198,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.action_storage = utils.ActionStorage(self)
         # Whether we need to save or not.
         self.dirty = False
-        self._label_file = None
+        self.label_file = None
         if output_file:
             if Config.get('auto_save'):
                 logger.warn(
@@ -226,8 +226,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # FIXME: QSettings.value can return None on PyQt4
         self.settings = QtCore.QSettings('labelme_client', 'labelme_client')
         self.recentFiles = self.settings.value('recentFiles', []) or []
-        self.lineColor = QtGui.QColor(self.settings.value('line/color', None))
-        self.fillColor = QtGui.QColor(self.settings.value('fill/color', None))
+        self.lineColor = self.settings.value('line/color', None)
+        self.fillColor = self.settings.value('fill/color', None)
         geometry = self.settings.value('window/geometry')
         if geometry:
             self.restoreGeometry(geometry)
@@ -273,15 +273,10 @@ class MainWindow(QtWidgets.QMainWindow):
             title = f'{title} - {self.filename}{dirty}'
         return title
 
-    @property
-    def label_file(self):
-        # if self._label_file is None:
-        #     self._label_file = LabelFile()
-        return self._label_file
-
-    @label_file.setter
-    def label_file(self, value):
-        self.label_file = LabelFile(filename=value)
+    def get_or_make_label_file(self):
+        if self.label_file is None:
+            self.label_file = LabelFile()
+        return self.label_file
 
     # Support Functions
 
@@ -310,7 +305,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def resetState(self):
         self.labelList.clear()
-        self._label_file = None
+        self.label_file = None
         self.canvas.clear_all()
 
     def addRecentFile(self, filename):
@@ -446,11 +441,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._noSelectionSlot = False
 
     def saveLabels(self, abs_path):
-        self._label_file = LabelFile()
         try:
             if osp.dirname(abs_path) and not osp.exists(osp.dirname(abs_path)):
                 os.makedirs(osp.dirname(abs_path))
-            self._label_file.save(self.snapshot, filename=abs_path)
+            self.get_or_make_label_file().save(self.snapshot, filename=abs_path)
             self.fileListWidget.set_current_file_saved(abs_path)
             return True
         except utils.LabelFileError as e:
@@ -623,7 +617,7 @@ class MainWindow(QtWidgets.QMainWindow):
             except LabelFileError as e:
                 print_file_error(e, filename)
                 return False
-            self._label_file = label_file
+            self.label_file = label_file
             self.load_snapshot(label_file.main_snapshot)
         else:
             try:
@@ -683,8 +677,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'filename', self.filename if self.filename else '')
         self.settings.setValue('window/geometry', self.saveGeometry())
         self.settings.setValue('window/state', self.saveState())
-        self.settings.setValue('line/color', self.lineColor)
-        self.settings.setValue('fill/color', self.fillColor)
         self.settings.setValue('recentFiles', self.recentFiles)
         # ask the use for where to save the labels
 
@@ -735,11 +727,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.uri = URI.from_file(filename)
 
     def changeOutputDirDialog(self, _value=False):
-        default_output_dir = self.output_dir
-        if default_output_dir is None and self.uri:
-            default_output_dir = self.uri.folder_name
-        if default_output_dir is None:
-            default_output_dir = self.currentPath()
+        default_output_dir = self.output_dir or (
+            self.uri.folder_name if self.uri else None
+        ) or '.'
 
         output_dir = QtWidgets.QFileDialog.getExistingDirectory(
             self, '%s - Save/Load Annotations in Directory' % __appname__,
@@ -753,20 +743,12 @@ class MainWindow(QtWidgets.QMainWindow):
             return
 
         self.output_dir = output_dir
+        self.fileListWidget.output_dir_changed(output_dir)
 
         self.statusBar().showMessage(
             '%s . Annotations will be saved/loaded in %s' %
             ('Change Annotations Dir', self.output_dir))
         self.statusBar().show()
-
-        current_filename = self.filename
-        self.importDirImages(self.lastOpenDir, load=False)
-
-        if current_filename in self.imageList:
-            # retain currently selected file
-            self.fileListWidget.setCurrentRow(
-                self.imageList.index(current_filename))
-            self.fileListWidget.repaint()
 
     def saveFile(self, _value=False):
         if self.hasLabels():
@@ -896,8 +878,8 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         if accepted:
             self.lineColor = color
+            self.settings.setValue('line/color', self.lineColor)
             self.canvas.update()
-            self.setDirty()
 
     def chooseColor2(self):
         accepted, color = self.colorDialog.getColor(
@@ -905,8 +887,8 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         if accepted:
             self.fillColor = color
+            self.settings.setValue('fill/color', self.fillColor)
             self.canvas.update()
-            self.setDirty()
 
     def toggleKeepPrevMode(self):
         Config.set('keep_prev', not Config.get('keep_prev'))
@@ -920,27 +902,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.remLabels(self.canvas.deleteSelected())
             self.setDirty()
             self.action_storage.refresh_all()
-
-    def chshapeLineColor(self):
-        # TODO: implement this
-        pass
-        # accepted, color = self.colorDialog.getColor(self.lineColor, 'Choose line color')
-        # if accepted:
-        #     for shape in self.canvas.selectedShapes:
-        #         shape.line_color = color
-        #     self.canvas.update()
-        #     self.setDirty()
-
-    def chshapeFillColor(self):
-        # TODO: implement this
-        pass
-        # color = self.colorDialog.getColor(
-        #     self.fillColor, 'Choose fill color', default=DEFAULT_FILL_COLOR)
-        # if color:
-        #     for shape in self.canvas.selectedShapes:
-        #         shape.fill_color = color
-        #     self.canvas.update()
-        #     self.setDirty()
 
     def copyShape(self):
         self.canvas.endMove(copy=True)
@@ -957,55 +918,13 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.mayContinue():
             return
 
-        if self.lastOpenDir and osp.exists(self.lastOpenDir):
-            defaultOpenDirPath = self.lastOpenDir
-        else:
-            defaultOpenDirPath = osp.dirname(self.filename) \
-                if self.filename else '.'
+        default_folder = self.uri.folder_name if self.uri else '.'
 
         targetDirPath = str(QtWidgets.QFileDialog.getExistingDirectory(
-            self, '%s - Open Directory' % __appname__, defaultOpenDirPath,
+            self, '%s - Open Directory' % __appname__, default_folder,
                   QtWidgets.QFileDialog.ShowDirsOnly |
                   QtWidgets.QFileDialog.DontResolveSymlinks))
         self.uri = URI.from_folder(targetDirPath, self.output_dir)
-        # self.importDirImages(targetDirPath)
-
-    def importDirImages(self, dirpath, pattern=None, load=True):
-        if not self.mayContinue() or not dirpath:
-            return
-        self.lastOpenDir = dirpath
-        self.fileListWidget.clear()
-        for filename in self.scanAllImages(dirpath):
-            if pattern and pattern not in filename:
-                continue
-            label_file = osp.splitext(filename)[0] + '.json'
-            if self.output_dir:
-                label_file_without_path = osp.basename(label_file)
-                label_file = osp.join(self.output_dir, label_file_without_path)
-            item = QtWidgets.QListWidgetItem(filename)
-            item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable)
-            if QtCore.QFile.exists(label_file) and \
-                    LabelFile.is_label_file(label_file):
-                item.setCheckState(Qt.Checked)
-            else:
-                item.setCheckState(Qt.Unchecked)
-            self.fileListWidget.addItem(item)
-        self.openNextImg()
-        self.action_storage.refresh_all()
-
-    def scanAllImages(self, folderPath):
-        extensions = ['.%s' % fmt.data().decode("ascii").lower()
-                      for fmt in QtGui.QImageReader.supportedImageFormats()]
-        images = []
-
-        for root, _, files in os.walk(folderPath):
-            root_to_folder = os.path.relpath(root, folderPath)
-            for file in files:
-                if file.lower().endswith(tuple(extensions)):
-                    relativePath = osp.join(root_to_folder, file)
-                    images.append(relativePath)
-        images.sort(key=lambda x: x.lower())
-        return images
 
     @property
     def snapshot(self):
@@ -1243,16 +1162,6 @@ class MainWindow(QtWidgets.QMainWindow):
             'edit', 'Add point to the nearest edge', enabled=False
         )
         self.canvas.edgeSelected.connect(addPoint.setEnabled)
-        shapeLineColor = action(
-            'Shape &Line Color', self.chshapeLineColor, icon='color-line',
-            tip='Change the line color for this specific shape',
-            enable_condition=lambda: bool(self.canvas.selectedShapes)
-        )
-        shapeFillColor = action(
-            'Shape &Fill Color', self.chshapeFillColor, icon='color',
-            tip='Change the fill color for this specific shape',
-            enable_condition=lambda: bool(self.canvas.selectedShapes)
-        )
 
         # Zoom (for toolbar)
         zoom = QtWidgets.QWidgetAction(self)
@@ -1273,8 +1182,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 edit,
                 copy,
                 delete,
-                shapeLineColor,
-                shapeFillColor,
                 undo,
                 undoLastPoint,
                 addPoint,

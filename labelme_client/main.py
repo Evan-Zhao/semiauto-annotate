@@ -182,8 +182,6 @@ def main():
     win.show()
     win.raise_()
     status_code = app.exec_()
-    from labelme_server.backend import ModelLoader
-    ModelLoader.exit_request = True
     sys.exit(status_code)
 
 
