@@ -384,7 +384,7 @@ class MainWindow(QtWidgets.QMainWindow):
         shape = self.labelList.get_shape_from_item(item)
         if shape is None:
             return
-        text, form, shapes = self.labelDialog.popUp(shape)
+        is_new_label, text, form, shapes = self.labelDialog.popUp(shape)
         if text is None:
             return
         if not self.validateLabel(text):
@@ -399,10 +399,9 @@ class MainWindow(QtWidgets.QMainWindow):
             shape.set_label(form)
         item.setText(text)
         self.setDirty()
-        if not self.uniqLabelList.findItems(text, Qt.MatchExactly):
+        if is_new_label:
             self.uniqLabelList.addItem(text)
             self.uniqLabelList.sortItems()
-        self.labelDialog.label_set()
 
     # React to canvas signals.
 
@@ -420,13 +419,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addLabel(added)
         self.setDirty()
 
-    def addLabel(self, shape):
+    def addLabel(self, shape, is_new_label=False):
         item = QtWidgets.QListWidgetItem(shape.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(Qt.Checked)
         self.labelList.itemsToShapes.append((item, shape))
         self.labelList.addItem(item)
-        # TODO: check that incoming label already exists, otherwise throw error
+        if is_new_label:
+            self.uniqLabelList.addItem(shape.label)
+            self.uniqLabelList.sortItems()
 
     def remLabels(self, shapes):
         for shape in shapes:
@@ -514,7 +515,8 @@ class MainWindow(QtWidgets.QMainWindow):
                     instance_text = previous_label
                 if instance_text != '':
                     text = instance_text
-            text, form, shapes = self.labelDialog.popUp(self.canvas.shapes[-1], text=text)
+            is_new_label, text, form, shapes = \
+                self.labelDialog.popUp(self.canvas.shapes[-1], text=text)
 
         if text and not self.validateLabel(text):
             self.errorMessage('Invalid label',
@@ -523,7 +525,7 @@ class MainWindow(QtWidgets.QMainWindow):
             text = ''
         if text:
             self.labelList.clearSelection()
-            self.addLabel(self.canvas.setLastLabel(form, shapes))
+            self.addLabel(self.canvas.setLastLabel(form, shapes), is_new_label)
             self.action_storage.refresh_all()
             self.setDirty()
         else:

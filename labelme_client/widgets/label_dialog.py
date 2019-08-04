@@ -286,7 +286,11 @@ class UILabelDialog(object):
         all_sel = self.get_texts_selected()
         if len(all_sel) < len(self.group_boxes):
             # Some label list has no selection.
-            return None, None
+            user_input = self.get_first_edit().text()
+            if user_input == '':
+                return None, None, None
+            else:
+                return True, [[user_input, {}, {}]], None
         alt_shapes = None
         for level, box in enumerate(self.group_boxes):
             box = self.boxes[level]
@@ -307,7 +311,7 @@ class UILabelDialog(object):
         if self._using_dialog_box:
             pose_widget = self.boxes[-1].layout().itemAt(0).widget()
             alt_shapes = pose_widget.get_shapes()
-        return form, alt_shapes
+        return False, form, alt_shapes
 
     @staticmethod
     def get_first_label_from_state(state):
@@ -437,8 +441,7 @@ class LabelDialog(QtWidgets.QDialog):
 
         self.ui = UILabelDialog(Config.get('labels'), self, parent)
         self.ui.init_ui()
-        self._form = None
-        self._shapes = None
+        self._results = None
         self._selected_shape = None
         self._boxes = []
         self._bindings = {}
@@ -483,14 +486,14 @@ class LabelDialog(QtWidgets.QDialog):
         self.ui.setup_ui_at_level(level)
 
     def validate(self):
-        self._form, self._shapes = self.ui.get_full_state()
-        if self._form is not None:
+        self._results = self.ui.get_full_state()
+        if self._results is not None:
             self.accept()
         else:
             QtWidgets.QMessageBox.warning(self, 'Error', 'Label form is not complete')
 
     def popUp(self, selected_shape, text=None, move=True):
-        self._form = self._shapes = None
+        self._results = None
         self._selected_shape = selected_shape
         self.ui.set_to_state(state=selected_shape.form, top_label=text)
         self.ui.focus_on_first_edit()
@@ -498,9 +501,10 @@ class LabelDialog(QtWidgets.QDialog):
             self.move(QtGui.QCursor.pos())
 
         self.exec_()
-        if self._form:
-            text = self.ui.get_first_label_from_state(self._form)
+        if self._results:
+            is_new_label, form, shapes = self._results
+            text = self.ui.get_first_label_from_state(form)
             self._last_label = text
-            return text, self._form, self._shapes
+            return is_new_label, text, form, shapes
         else:
-            return None, None, None
+            return None, None, None, None
