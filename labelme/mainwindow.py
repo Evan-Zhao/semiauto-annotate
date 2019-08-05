@@ -431,7 +431,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not self.uniqLabelList.findItems(text, Qt.MatchExactly):
             self.uniqLabelList.addItem(text)
             self.uniqLabelList.sortItems()
-        self.labelDialog.label_set()
+        #self.labelDialog.label_set()
 
     def fileSearchChanged(self):
         self.importDirImages(

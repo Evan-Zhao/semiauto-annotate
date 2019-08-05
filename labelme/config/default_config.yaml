@@ -66,7 +66,7 @@ label_color:
   bike: 0x80FFB300 # Vivid Yellow
   bus: 0x80803E75 # Strong Purple
   car: 0x80FF6800 # Vivid Orange
-  motor: 0x80A6BDD7 # Very Light Blue
+  motorbike: 0x80A6BDD7 # Very Light Blue
   train: 0x80C10020 # Vivid Red
   truck: 0x80CEA262 # Grayish Yellow
   rider: 0x80817066 # Medium Gray
